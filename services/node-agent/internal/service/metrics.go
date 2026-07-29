@@ -1,16 +1,20 @@
 package service
 
-import "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/metrics"
+import (
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/metrics"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/scheduler"
+)
 
-// MetricsService provides access to system metrics.
-type MetricsService struct{}
-
-// NewMetricsService creates a new MetricsService.
-func NewMetricsService() *MetricsService {
-	return &MetricsService{}
+type MetricsService struct {
+	scheduler *scheduler.Scheduler
 }
 
-// GetInfo returns the current system metrics.
+func NewMetricsService(scheduler *scheduler.Scheduler) *MetricsService {
+	return &MetricsService{
+		scheduler: scheduler,
+	}
+}
+
 func (s *MetricsService) GetInfo() (metrics.Info, error) {
-	return metrics.GetInfo()
+	return s.scheduler.Snapshot()
 }
