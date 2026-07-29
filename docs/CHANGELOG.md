@@ -21,6 +21,25 @@ The format is inspired by Keep a Changelog.
 - Nothing yet.
 
 ---
+## v0.2.0 — Core Foundation
+
+### Added
+- HTTP server
+- Middleware pipeline
+- Health endpoint
+- Metrics endpoint
+- Version package
+- Metadata collection
+- Graceful shutdown
+- HTTP handler tests
+
+### Changed
+- Centralized version information
+- Refactored HTTP handlers
+- Introduced application lifecycle
+
+### Removed
+- Legacy internal/server/handlers.go
 
 ## [0.8.0]
 

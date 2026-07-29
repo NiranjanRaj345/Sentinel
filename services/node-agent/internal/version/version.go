@@ -9,7 +9,7 @@ type Info struct {
 
 var Build = Info{
 	Name:    "Sentinel Node Agent",
-	Version: "0.2.0-dev",
+	Version: "0.3.0-dev",
 	Commit:  "development",
 	BuiltAt: "unknown",
 }
