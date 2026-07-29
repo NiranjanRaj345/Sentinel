@@ -16,11 +16,31 @@ type Scheduler struct {
 	latest  metrics.Info
 	lastErr error
 
+	stats Stats
+
 	mu     sync.RWMutex
 	ticker *time.Ticker
 	done   chan struct{}
 	wg     sync.WaitGroup
 	once   sync.Once
+}
+
+type Stats struct {
+	StartedAt              time.Time
+	LastCollectionAt       time.Time
+	LastCollectionDuration time.Duration
+
+	SuccessfulCollections uint64
+	FailedCollections     uint64
+
+	LastError string
+}
+
+func (s *Scheduler) Stats() Stats {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	return s.stats
 }
 
 func New(interval time.Duration, log *logger.Logger) *Scheduler {
@@ -31,7 +51,9 @@ func New(interval time.Duration, log *logger.Logger) *Scheduler {
 }
 
 func (s *Scheduler) Start() error {
+	start := time.Now()
 	snapshot, err := metrics.GetInfo()
+	duration := time.Since(start)
 	if err != nil {
 		return err
 	}
@@ -39,6 +61,11 @@ func (s *Scheduler) Start() error {
 	s.mu.Lock()
 	s.latest = snapshot
 	s.lastErr = nil
+	s.stats.StartedAt = time.Now()
+	s.stats.LastCollectionAt = s.stats.StartedAt
+	s.stats.LastCollectionDuration = duration
+	s.stats.SuccessfulCollections++
+	s.stats.LastError = ""
 	s.mu.Unlock()
 
 	s.ticker = time.NewTicker(s.interval)
@@ -47,7 +74,7 @@ func (s *Scheduler) Start() error {
 
 	go s.run()
 
-	s.log.Info("metrics scheduler started, interval: %s", s.interval)
+	s.log.Info("background scheduler started, interval: %s", s.interval)
 
 	return nil
 }
@@ -65,21 +92,30 @@ func (s *Scheduler) run() {
 }
 
 func (s *Scheduler) collect() {
+	start := time.Now()
 	snapshot, err := metrics.GetInfo()
+	duration := time.Since(start)
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if err != nil {
 		s.log.Error("failed to collect metrics: %v", err)
 
-		s.mu.Lock()
+		s.stats.FailedCollections++
+		s.stats.LastError = err.Error()
 		s.lastErr = err
-		s.mu.Unlock()
 
 		return
 	}
 
-	s.mu.Lock()
 	s.latest = snapshot
 	s.lastErr = nil
-	s.mu.Unlock()
+
+	s.stats.SuccessfulCollections++
+	s.stats.LastCollectionAt = time.Now()
+	s.stats.LastCollectionDuration = duration
+	s.stats.LastError = ""
 }
 
 func (s *Scheduler) Snapshot() (metrics.Info, error) {
@@ -102,5 +138,7 @@ func (s *Scheduler) Stop() {
 			s.ticker.Stop()
 		}
 		s.wg.Wait()
+
+		s.log.Info("background scheduler stopped")
 	})
 }
