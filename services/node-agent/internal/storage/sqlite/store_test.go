@@ -168,3 +168,99 @@ func TestStore_Save_NilStore_ReturnsError(t *testing.T) {
 		t.Fatal("expected error when saving to nil store")
 	}
 }
+
+func TestStore_Latest_EmptyDatabase(t *testing.T) {
+	store := mustOpenStore(t, "latest_empty.db")
+	defer store.Close()
+
+	_, err := store.Latest()
+	if err == nil {
+		t.Fatal("expected error when database is empty")
+	}
+}
+
+func TestStore_Latest_ReturnsMostRecent(t *testing.T) {
+	store := mustOpenStore(t, "latest_recent.db")
+	defer store.Close()
+
+	older := metrics.Info{Metadata: metrics.Metadata{Timestamp: time.Now().UTC().Add(-2 * time.Hour)}}
+	newer := metrics.Info{Metadata: metrics.Metadata{Timestamp: time.Now().UTC()}}
+
+	if err := store.Save(older); err != nil {
+		t.Fatalf("Save() failed: %v", err)
+	}
+	if err := store.Save(newer); err != nil {
+		t.Fatalf("Save() failed: %v", err)
+	}
+
+	info, err := store.Latest()
+	if err != nil {
+		t.Fatalf("Latest() failed: %v", err)
+	}
+
+	if !info.Metadata.Timestamp.Equal(newer.Metadata.Timestamp) {
+		t.Fatalf("expected latest timestamp %v, got %v", newer.Metadata.Timestamp, info.Metadata.Timestamp)
+	}
+}
+
+func TestStore_Range_ReturnsSnapshotsInOrder(t *testing.T) {
+	store := mustOpenStore(t, "range_ordered.db")
+	defer store.Close()
+
+	base := time.Date(2026, 7, 29, 15, 0, 0, 0, time.UTC)
+	snapshots := []metrics.Info{
+		{Metadata: metrics.Metadata{Timestamp: base}},
+		{Metadata: metrics.Metadata{Timestamp: base.Add(30 * time.Minute)}},
+		{Metadata: metrics.Metadata{Timestamp: base.Add(60 * time.Minute)}},
+	}
+
+	for _, snap := range snapshots {
+		if err := store.Save(snap); err != nil {
+			t.Fatalf("Save() failed: %v", err)
+		}
+	}
+
+	results, err := store.Range(base, base.Add(60*time.Minute))
+	if err != nil {
+		t.Fatalf("Range() failed: %v", err)
+	}
+
+	if len(results) != 3 {
+		t.Fatalf("expected 3 snapshots, got %d", len(results))
+	}
+
+	for i, snap := range results {
+		if !snap.Metadata.Timestamp.Equal(snapshots[i].Metadata.Timestamp) {
+			t.Fatalf("snapshot %d: expected %v, got %v", i, snapshots[i].Metadata.Timestamp, snap.Metadata.Timestamp)
+		}
+	}
+}
+
+func TestStore_Range_EmptyResult(t *testing.T) {
+	store := mustOpenStore(t, "range_empty.db")
+	defer store.Close()
+
+	from := time.Date(2026, 7, 29, 15, 0, 0, 0, time.UTC)
+	to := from.Add(1 * time.Hour)
+
+	results, err := store.Range(from, to)
+	if err != nil {
+		t.Fatalf("Range() failed: %v", err)
+	}
+
+	if len(results) != 0 {
+		t.Fatalf("expected 0 snapshots, got %d", len(results))
+	}
+}
+
+func mustOpenStore(t *testing.T, name string) *Store {
+	t.Helper()
+	tmpDir := t.TempDir()
+	dbPath := filepath.Join(tmpDir, name)
+
+	store, err := Open(dbPath)
+	if err != nil {
+		t.Fatalf("Open() failed: %v", err)
+	}
+	return store
+}

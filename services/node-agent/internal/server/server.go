@@ -7,6 +7,7 @@ import (
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/logger"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/server/middleware"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/service"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/storage/sqlite"
 )
 
 type Server struct {
@@ -14,6 +15,7 @@ type Server struct {
 	log            *logger.Logger
 	systemService  *service.SystemService
 	metricsService *service.MetricsService
+	store          *sqlite.Store
 }
 
 func New(
@@ -21,12 +23,14 @@ func New(
 	log *logger.Logger,
 	systemService *service.SystemService,
 	metricsService *service.MetricsService,
+	store *sqlite.Store,
 ) *Server {
 
 	server := &Server{
 		log:            log,
 		systemService:  systemService,
 		metricsService: metricsService,
+		store:          store,
 	}
 
 	mux := http.NewServeMux()

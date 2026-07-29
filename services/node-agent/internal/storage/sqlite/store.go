@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/metrics"
 	_ "modernc.org/sqlite"
@@ -59,4 +60,67 @@ func (s *Store) Save(info metrics.Info) error {
 	}
 
 	return nil
+}
+
+func (s *Store) Latest() (metrics.Info, error) {
+	if s == nil || s.db == nil {
+		return metrics.Info{}, fmt.Errorf("store is not open")
+	}
+
+	row := s.db.QueryRow(
+		`SELECT payload FROM metrics_snapshots ORDER BY timestamp DESC LIMIT 1`,
+	)
+
+	var payload []byte
+	if err := row.Scan(&payload); err != nil {
+		if err == sql.ErrNoRows {
+			return metrics.Info{}, fmt.Errorf("no historical metrics available")
+		}
+		return metrics.Info{}, fmt.Errorf("query latest snapshot: %w", err)
+	}
+
+	var info metrics.Info
+	if err := json.Unmarshal(payload, &info); err != nil {
+		return metrics.Info{}, fmt.Errorf("decode snapshot: %w", err)
+	}
+
+	return info, nil
+}
+
+func (s *Store) Range(from, to time.Time) ([]metrics.Info, error) {
+	if s == nil || s.db == nil {
+		return nil, fmt.Errorf("store is not open")
+	}
+
+	rows, err := s.db.Query(
+		`SELECT payload FROM metrics_snapshots WHERE timestamp >= ? AND timestamp <= ? ORDER BY timestamp ASC`,
+		from,
+		to,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("query history range: %w", err)
+	}
+	defer rows.Close()
+
+	var snapshots []metrics.Info
+
+	for rows.Next() {
+		var payload []byte
+		if err := rows.Scan(&payload); err != nil {
+			return nil, fmt.Errorf("scan snapshot: %w", err)
+		}
+
+		var info metrics.Info
+		if err := json.Unmarshal(payload, &info); err != nil {
+			return nil, fmt.Errorf("decode snapshot: %w", err)
+		}
+
+		snapshots = append(snapshots, info)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate snapshots: %w", err)
+	}
+
+	return snapshots, nil
 }
