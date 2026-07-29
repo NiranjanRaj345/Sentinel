@@ -15,7 +15,11 @@ const (
 func main() {
 	fmt.Printf("%s %s\n", ApplicationName, ApplicationVersion)
 
-	app := application.New()
+	app, err := application.New()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to initialize application: %v\n", err)
+		os.Exit(1)
+	}
 
 	if err := app.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "Application failed: %v\n", err)
