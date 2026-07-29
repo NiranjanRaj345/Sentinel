@@ -2,14 +2,14 @@ package server
 
 import (
 	"fmt"
-	"net/http"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/service"
+	"net/http"
 )
 
 // Server owns the HTTP server lifecycle.
 type Server struct {
-	mux        *http.ServeMux
-	httpServer *http.Server
+	mux           *http.ServeMux
+	httpServer    *http.Server
 	systemService *service.SystemService
 }
 
@@ -20,20 +20,20 @@ func New(
 ) *Server {
 	mux := http.NewServeMux()
 
-httpServer := &http.Server{
-	Addr:    addr,
-	Handler: mux,
-}
+	httpServer := &http.Server{
+		Addr:    addr,
+		Handler: mux,
+	}
 
-server := &Server{
-	mux:           mux,
-	httpServer:    httpServer,
-	systemService: systemService,
-}
+	server := &Server{
+		mux:           mux,
+		httpServer:    httpServer,
+		systemService: systemService,
+	}
 
-server.registerRoutes()
+	server.registerRoutes()
 
-return server
+	return server
 }
 
 // Start begins listening for HTTP requests.
