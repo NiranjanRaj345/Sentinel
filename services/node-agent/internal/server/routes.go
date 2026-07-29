@@ -7,6 +7,6 @@ import (
 )
 
 func (s *Server) registerRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("/metrics", handlers.Metrics)
+	mux.HandleFunc("/metrics", handlers.Metrics(s.metricsService))
 	mux.HandleFunc("/health", handlers.Health)
 }

@@ -2,23 +2,25 @@ package handlers
 
 import (
 	"encoding/json"
-	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/metrics"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/service"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/version"
 	"net/http"
 	"time"
 )
 
-func Metrics(w http.ResponseWriter, r *http.Request) {
-	info, err := metrics.GetInfo()
-	if err != nil {
-		http.Error(w, "failed to collect metrics", http.StatusInternalServerError)
-		return
-	}
+func Metrics(metricsService *service.MetricsService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		info, err := metricsService.GetInfo()
+		if err != nil {
+			http.Error(w, "failed to collect metrics", http.StatusInternalServerError)
+			return
+		}
 
-	w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Type", "application/json")
 
-	if err := json.NewEncoder(w).Encode(info); err != nil {
-		http.Error(w, "failed to encode response", http.StatusInternalServerError)
+		if err := json.NewEncoder(w).Encode(info); err != nil {
+			http.Error(w, "failed to encode response", http.StatusInternalServerError)
+		}
 	}
 }
 
