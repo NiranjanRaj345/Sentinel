@@ -2,13 +2,14 @@ package metrics
 
 import "time"
 
-// AgentInfo describes the running Sentinel agent.
 type AgentInfo struct {
-	Name    string `json:"name"`
-	Version string `json:"version"`
+	Name         string `json:"name"`
+	Version      string `json:"version"`
+	Platform     string `json:"platform"`
+	Architecture string `json:"architecture"`
+	GoVersion    string `json:"go_version"`
 }
 
-// Metadata describes the metrics collection.
 type Metadata struct {
 	Timestamp            time.Time `json:"timestamp"`
 	CollectionDurationMS int64     `json:"collection_duration_ms"`

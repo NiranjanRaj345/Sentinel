@@ -5,16 +5,14 @@ import (
 	"log"
 
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/application"
-)
-
-const (
-	ApplicationName    = "Sentinel Node Agent"
-	ApplicationVersion = "0.1.0-dev"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/version"
 )
 
 func main() {
-	fmt.Printf("%s %s\n", ApplicationName, ApplicationVersion)
-
+	fmt.Printf("%s %s\n",
+		version.Build.Name,
+		version.Build.Version,
+	)
 	app, err := application.New()
 	if err != nil {
 		log.Fatal(err)

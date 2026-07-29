@@ -1,6 +1,11 @@
 package metrics
 
-import "time"
+import (
+	"runtime"
+	"time"
+
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/version"
+)
 
 type CPUInfo struct {
 	UsagePercent float64 `json:"usage_percent"`
@@ -80,8 +85,11 @@ func GetInfo() (Info, error) {
 			Timestamp:            end,
 			CollectionDurationMS: duration.Milliseconds(),
 			Agent: AgentInfo{
-				Name:    "sentinel-node-agent",
-				Version: "0.2.0",
+				Name:         version.Build.Name,
+				Version:      version.Build.Version,
+				Platform:     runtime.GOOS,
+				Architecture: runtime.GOARCH,
+				GoVersion:    runtime.Version(),
 			},
 		},
 
