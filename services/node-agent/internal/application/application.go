@@ -11,6 +11,7 @@ import (
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/scheduler"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/server"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/service"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/storage/sqlite"
 )
 
 const ConfigPath = "config.yaml"
@@ -20,6 +21,7 @@ type Application struct {
 	logger    *logger.Logger
 	server    *server.Server
 	scheduler *scheduler.Scheduler
+	store     *sqlite.Store
 }
 
 func New() (*Application, error) {
@@ -45,7 +47,12 @@ func New() (*Application, error) {
 		return nil, fmt.Errorf("parse metrics interval: %w", err)
 	}
 
-	metricsScheduler := scheduler.New(interval, log.Component("scheduler"))
+	store, err := sqlite.Open(cfg.Storage.Path)
+	if err != nil {
+		return nil, fmt.Errorf("open storage: %w", err)
+	}
+
+	metricsScheduler := scheduler.New(interval, log.Component("scheduler"), store)
 	metricsService := service.NewMetricsService(metricsScheduler)
 
 	srv := server.New(
@@ -60,6 +67,7 @@ func New() (*Application, error) {
 		logger:    appLog,
 		server:    srv,
 		scheduler: metricsScheduler,
+		store:     store,
 	}, nil
 }
 
@@ -77,5 +85,10 @@ func (a *Application) Start() error {
 func (a *Application) Shutdown(ctx context.Context) error {
 	a.logger.Info("Shutting down Sentinel Node Agent")
 	a.scheduler.Stop()
+
+	if err := a.store.Close(); err != nil {
+		a.logger.Error("failed to close storage: %v", err)
+	}
+
 	return a.server.Shutdown(ctx)
 }

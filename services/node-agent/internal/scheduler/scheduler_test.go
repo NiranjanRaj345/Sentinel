@@ -2,15 +2,26 @@ package scheduler
 
 import (
 	"io"
+	"path/filepath"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/logger"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/storage/sqlite"
 )
 
+func openTempStore(t *testing.T) *sqlite.Store {
+	t.Helper()
+	store, err := sqlite.Open(filepath.Join(t.TempDir(), "test.db"))
+	if err != nil {
+		t.Fatalf("open temp store: %v", err)
+	}
+	return store
+}
+
 func TestScheduler_Snapshot_BeforeStart_ReturnsError(t *testing.T) {
-	s := New(5*time.Second, logger.New(logger.Info, io.Discard))
+	s := New(5*time.Second, logger.New(logger.Info, io.Discard), nil)
 
 	_, err := s.Snapshot()
 	if err == nil {
@@ -19,7 +30,10 @@ func TestScheduler_Snapshot_BeforeStart_ReturnsError(t *testing.T) {
 }
 
 func TestScheduler_Start_InitialCollectionSucceeds(t *testing.T) {
-	s := New(100*time.Millisecond, logger.New(logger.Info, io.Discard))
+	store := openTempStore(t)
+	defer store.Close()
+
+	s := New(100*time.Millisecond, logger.New(logger.Info, io.Discard), store)
 
 	err := s.Start()
 	if err != nil {
@@ -37,7 +51,10 @@ func TestScheduler_Start_InitialCollectionSucceeds(t *testing.T) {
 }
 
 func TestScheduler_Snapshot_UpdatesOverTime(t *testing.T) {
-	s := New(50*time.Millisecond, logger.New(logger.Info, io.Discard))
+	store := openTempStore(t)
+	defer store.Close()
+
+	s := New(50*time.Millisecond, logger.New(logger.Info, io.Discard), store)
 
 	if err := s.Start(); err != nil {
 		t.Fatalf("Start() failed: %v", err)
@@ -62,7 +79,10 @@ func TestScheduler_Snapshot_UpdatesOverTime(t *testing.T) {
 }
 
 func TestScheduler_Snapshot_Concurrent(t *testing.T) {
-	s := New(100*time.Millisecond, logger.New(logger.Info, io.Discard))
+	store := openTempStore(t)
+	defer store.Close()
+
+	s := New(100*time.Millisecond, logger.New(logger.Info, io.Discard), store)
 
 	if err := s.Start(); err != nil {
 		t.Fatalf("Start() failed: %v", err)
@@ -92,7 +112,10 @@ func TestScheduler_Snapshot_Concurrent(t *testing.T) {
 }
 
 func TestScheduler_Stop_TerminatesGoroutine(t *testing.T) {
-	s := New(100*time.Millisecond, logger.New(logger.Info, io.Discard))
+	store := openTempStore(t)
+	defer store.Close()
+
+	s := New(100*time.Millisecond, logger.New(logger.Info, io.Discard), store)
 
 	if err := s.Start(); err != nil {
 		t.Fatalf("Start() failed: %v", err)
@@ -109,7 +132,10 @@ func TestScheduler_Stop_TerminatesGoroutine(t *testing.T) {
 }
 
 func TestScheduler_Stats_PopulatedAfterStart(t *testing.T) {
-	s := New(100*time.Millisecond, logger.New(logger.Info, io.Discard))
+	store := openTempStore(t)
+	defer store.Close()
+
+	s := New(100*time.Millisecond, logger.New(logger.Info, io.Discard), store)
 
 	if err := s.Start(); err != nil {
 		t.Fatalf("Start() failed: %v", err)
@@ -135,7 +161,10 @@ func TestScheduler_Stats_PopulatedAfterStart(t *testing.T) {
 }
 
 func TestScheduler_Stats_SuccessfulCollection_IncrementsCounter(t *testing.T) {
-	s := New(50*time.Millisecond, logger.New(logger.Info, io.Discard))
+	store := openTempStore(t)
+	defer store.Close()
+
+	s := New(50*time.Millisecond, logger.New(logger.Info, io.Discard), store)
 
 	if err := s.Start(); err != nil {
 		t.Fatalf("Start() failed: %v", err)
@@ -154,7 +183,10 @@ func TestScheduler_Stats_SuccessfulCollection_IncrementsCounter(t *testing.T) {
 }
 
 func TestScheduler_Stats_ConcurrentAccess(t *testing.T) {
-	s := New(100*time.Millisecond, logger.New(logger.Info, io.Discard))
+	store := openTempStore(t)
+	defer store.Close()
+
+	s := New(100*time.Millisecond, logger.New(logger.Info, io.Discard), store)
 
 	if err := s.Start(); err != nil {
 		t.Fatalf("Start() failed: %v", err)

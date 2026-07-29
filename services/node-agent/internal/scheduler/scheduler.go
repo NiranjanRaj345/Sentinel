@@ -7,11 +7,13 @@ import (
 
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/logger"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/metrics"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/storage/sqlite"
 )
 
 type Scheduler struct {
 	interval time.Duration
 	log      *logger.Logger
+	store    *sqlite.Store
 
 	latest  metrics.Info
 	lastErr error
@@ -43,10 +45,11 @@ func (s *Scheduler) Stats() Stats {
 	return s.stats
 }
 
-func New(interval time.Duration, log *logger.Logger) *Scheduler {
+func New(interval time.Duration, log *logger.Logger, store *sqlite.Store) *Scheduler {
 	return &Scheduler{
 		interval: interval,
 		log:      log,
+		store:    store,
 	}
 }
 
@@ -67,6 +70,12 @@ func (s *Scheduler) Start() error {
 	s.stats.SuccessfulCollections++
 	s.stats.LastError = ""
 	s.mu.Unlock()
+
+	if s.store != nil {
+		if err := s.store.Save(snapshot); err != nil {
+			s.log.Error("failed to save initial metrics snapshot: %v", err)
+		}
+	}
 
 	s.ticker = time.NewTicker(s.interval)
 	s.done = make(chan struct{})
@@ -97,7 +106,6 @@ func (s *Scheduler) collect() {
 	duration := time.Since(start)
 
 	s.mu.Lock()
-	defer s.mu.Unlock()
 
 	if err != nil {
 		s.log.Error("failed to collect metrics: %v", err)
@@ -105,6 +113,8 @@ func (s *Scheduler) collect() {
 		s.stats.FailedCollections++
 		s.stats.LastError = err.Error()
 		s.lastErr = err
+
+		s.mu.Unlock()
 
 		return
 	}
@@ -116,6 +126,14 @@ func (s *Scheduler) collect() {
 	s.stats.LastCollectionAt = time.Now()
 	s.stats.LastCollectionDuration = duration
 	s.stats.LastError = ""
+
+	s.mu.Unlock()
+
+	if s.store != nil {
+		if err := s.store.Save(snapshot); err != nil {
+			s.log.Error("failed to save metrics snapshot: %v", err)
+		}
+	}
 }
 
 func (s *Scheduler) Snapshot() (metrics.Info, error) {

@@ -2,7 +2,11 @@ package sqlite
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
+
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/metrics"
+	_ "modernc.org/sqlite"
 )
 
 type Store struct {
@@ -33,4 +37,26 @@ func (s *Store) Close() error {
 	}
 
 	return s.db.Close()
+}
+
+func (s *Store) Save(info metrics.Info) error {
+	if s == nil || s.db == nil {
+		return fmt.Errorf("store is not open")
+	}
+
+	payload, err := json.Marshal(info)
+	if err != nil {
+		return fmt.Errorf("marshal metrics: %w", err)
+	}
+
+	_, err = s.db.Exec(
+		`INSERT INTO metrics_snapshots (timestamp, payload) VALUES (?, ?)`,
+		info.Metadata.Timestamp,
+		payload,
+	)
+	if err != nil {
+		return fmt.Errorf("insert snapshot: %w", err)
+	}
+
+	return nil
 }
