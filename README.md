@@ -1,43 +1,78 @@
 # 🛡️ Sentinel
 
-> Personal Remote Infrastructure Platform
+> **Always Connected. Always Recoverable. Always Yours.**
 
-## Overview
+Sentinel is a self-hosted personal infrastructure platform designed to monitor, manage, protect, and recover computers and devices from anywhere in the world.
 
-Sentinel is a self-hosted infrastructure management platform designed to securely monitor, manage, and recover personal computers and future homelab devices from anywhere in the world.
+---
 
 ## Vision
 
-Build a reliable, scalable, and secure platform for managing personal infrastructure without relying on third-party cloud services.
+Sentinel begins with a single Windows desktop and evolves into a unified platform capable of managing:
 
-## Current Status
+- Windows desktops
+- Linux servers
+- NAS systems
+- Raspberry Pi devices
+- ESP32 hardware
+- Future AI and home-lab infrastructure
 
-🚧 Sprint 0 – Project Planning
+---
 
-## Planned Features
+## Core Components
 
-- Secure Remote Desktop
-- System Monitoring
-- Hardware Recovery
-- Notifications
-- Automation
-- Future Homelab Management
+### Node Agent
 
-## Architecture
+Runs on every managed machine.
 
-(Architecture diagram will be added here.)
+Responsible for:
 
-## Repository Structure
+- System information
+- Health reporting
+- Software actions
 
-(Short explanation.)
+---
 
-## Documentation
+### Guardian
 
-- Project Charter
-- System Architecture
-- Development Roadmap
-- Decision Log
+Hardware controller.
+
+Responsible for:
+
+- Power control
+- Reset control
+- Hardware recovery
+
+---
+
+### Gateway
+
+Coordinates communication between devices.
+
+Responsible for:
+
+- Device routing
+- State aggregation
+- Secure communication
+
+---
+
+### Sentinel Dashboard
+
+The primary interface used to monitor and control the infrastructure.
+
+---
+
+## Project Status
+
+🚧 Under active development.
+
+Current milestone:
+
+- Repository foundation
+
+---
 
 ## License
 
-MIT
+This project is currently private.
