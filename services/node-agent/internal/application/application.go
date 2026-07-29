@@ -25,15 +25,18 @@ func New() (*Application, error) {
 	if err != nil {
 		return nil, fmt.Errorf("load config: %w", err)
 	}
+
 	log, err := logger.NewFromString(cfg.Logging.Level, os.Stdout)
 	if err != nil {
 		return nil, fmt.Errorf("initialize logger: %w", err)
 	}
+
 	systemService := service.NewSystemService()
 	metricsService := service.NewMetricsService()
 
-	server := server.New(
+	srv := server.New(
 		cfg.Server.Address(),
+		log,
 		systemService,
 		metricsService,
 	)
@@ -41,7 +44,7 @@ func New() (*Application, error) {
 	return &Application{
 		cfg:    cfg,
 		logger: log,
-		server: server,
+		server: srv,
 	}, nil
 }
 

@@ -3,6 +3,8 @@ package server
 import (
 	"net/http"
 
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/logger"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/server/middleware"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/service"
 )
 
@@ -14,6 +16,7 @@ type Server struct {
 
 func New(
 	addr string,
+	log *logger.Logger,
 	systemService *service.SystemService,
 	metricsService *service.MetricsService,
 ) *Server {
@@ -27,9 +30,15 @@ func New(
 
 	server.registerRoutes(mux)
 
+	handler := middleware.Chain(
+		mux,
+		middleware.Recovery(log),
+		middleware.RequestID,
+	)
+
 	server.httpServer = &http.Server{
 		Addr:    addr,
-		Handler: mux,
+		Handler: handler,
 	}
 
 	return server
