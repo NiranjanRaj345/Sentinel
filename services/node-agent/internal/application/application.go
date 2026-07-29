@@ -4,8 +4,10 @@ import (
 	"fmt"
 
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/config"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/logger"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/server"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/service"
+	"os"
 )
 
 const ConfigPath = "config.yaml"
@@ -13,6 +15,7 @@ const ConfigPath = "config.yaml"
 // Application represents the Sentinel Node Agent.
 type Application struct {
 	cfg    config.Config
+	logger *logger.Logger
 	server *server.Server
 }
 
@@ -21,6 +24,10 @@ func New() (*Application, error) {
 	cfg, err := config.Load(ConfigPath)
 	if err != nil {
 		return nil, fmt.Errorf("load config: %w", err)
+	}
+	log, err := logger.NewFromString(cfg.Logging.Level, os.Stdout)
+	if err != nil {
+		return nil, fmt.Errorf("initialize logger: %w", err)
 	}
 	systemService := service.NewSystemService()
 	metricsService := service.NewMetricsService()
@@ -33,6 +40,7 @@ func New() (*Application, error) {
 
 	return &Application{
 		cfg:    cfg,
+		logger: log,
 		server: server,
 	}, nil
 }

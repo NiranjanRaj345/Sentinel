@@ -41,3 +41,12 @@ func (l *Logger) Warn(format string, args ...any) {
 func (l *Logger) Error(format string, args ...any) {
 	l.logMessage(Error, format, args...)
 }
+
+func NewFromString(level string, out io.Writer) (*Logger, error) {
+	parsed, err := ParseLevel(level)
+	if err != nil {
+		return nil, err
+	}
+
+	return New(parsed, out), nil
+}
