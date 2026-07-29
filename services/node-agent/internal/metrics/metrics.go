@@ -1,10 +1,5 @@
 package metrics
 
-import (
-	gnet "github.com/shirou/gopsutil/v4/net"
-	"os"
-)
-
 type CPUInfo struct {
 	UsagePercent float64 `json:"usage_percent"`
 }
@@ -64,60 +59,16 @@ func GetInfo() (Info, error) {
 	if err != nil {
 		return Info{}, err
 	}
-
-	hostname, err := os.Hostname()
+	networkInfo, err := getNetworkInfo()
 	if err != nil {
 		return Info{}, err
-	}
-
-	interfaces, err := gnet.Interfaces()
-	if err != nil {
-		return Info{}, err
-	}
-
-	var networkInterfaces []NetworkInterface
-
-	for _, iface := range interfaces {
-		var addresses []string
-
-		for _, addr := range iface.Addrs {
-			addresses = append(addresses, addr.Addr)
-		}
-
-		networkInterfaces = append(networkInterfaces, NetworkInterface{
-			Name:      iface.Name,
-			MAC:       iface.HardwareAddr,
-			Addresses: addresses,
-		})
-	}
-
-	ioCounters, err := gnet.IOCounters(false)
-	if err != nil {
-		return Info{}, err
-	}
-
-	var networkIO NetworkIO
-
-	if len(ioCounters) > 0 {
-		io := ioCounters[0]
-
-		networkIO = NetworkIO{
-			BytesSent:     io.BytesSent,
-			BytesReceived: io.BytesRecv,
-			PacketsSent:   io.PacketsSent,
-			PacketsRecv:   io.PacketsRecv,
-		}
 	}
 
 	info := Info{
-		CPU:    cpuInfo,
-		Memory: memoryInfo,
-		Disks:  diskInfo,
-		Network: NetworkInfo{
-			Hostname:   hostname,
-			Interfaces: networkInterfaces,
-			IO:         networkIO,
-		},
+		CPU:     cpuInfo,
+		Memory:  memoryInfo,
+		Disks:   diskInfo,
+		Network: networkInfo,
 	}
 
 	return info, nil
