@@ -8,6 +8,7 @@ import (
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/server/middleware"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/service"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/storage/sqlite"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/stream"
 )
 
 type Server struct {
@@ -16,6 +17,7 @@ type Server struct {
 	systemService  *service.SystemService
 	metricsService *service.MetricsService
 	store          *sqlite.Store
+	hub            *stream.Hub
 }
 
 func New(
@@ -24,6 +26,7 @@ func New(
 	systemService *service.SystemService,
 	metricsService *service.MetricsService,
 	store *sqlite.Store,
+	hub *stream.Hub,
 ) *Server {
 
 	server := &Server{
@@ -31,6 +34,7 @@ func New(
 		systemService:  systemService,
 		metricsService: metricsService,
 		store:          store,
+		hub:            hub,
 	}
 
 	mux := http.NewServeMux()

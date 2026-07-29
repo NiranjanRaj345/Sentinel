@@ -8,12 +8,14 @@ import (
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/logger"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/metrics"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/storage/sqlite"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/stream"
 )
 
 type Scheduler struct {
 	interval time.Duration
 	log      *logger.Logger
 	store    *sqlite.Store
+	hub      *stream.Hub
 
 	latest  metrics.Info
 	lastErr error
@@ -45,11 +47,12 @@ func (s *Scheduler) Stats() Stats {
 	return s.stats
 }
 
-func New(interval time.Duration, log *logger.Logger, store *sqlite.Store) *Scheduler {
+func New(interval time.Duration, log *logger.Logger, store *sqlite.Store, hub *stream.Hub) *Scheduler {
 	return &Scheduler{
 		interval: interval,
 		log:      log,
 		store:    store,
+		hub:      hub,
 	}
 }
 
@@ -75,6 +78,10 @@ func (s *Scheduler) Start() error {
 		if err := s.store.Save(snapshot); err != nil {
 			s.log.Error("failed to save initial metrics snapshot: %v", err)
 		}
+	}
+
+	if s.hub != nil {
+		s.hub.Broadcast(snapshot)
 	}
 
 	s.ticker = time.NewTicker(s.interval)
@@ -133,6 +140,10 @@ func (s *Scheduler) collect() {
 		if err := s.store.Save(snapshot); err != nil {
 			s.log.Error("failed to save metrics snapshot: %v", err)
 		}
+	}
+
+	if s.hub != nil {
+		s.hub.Broadcast(snapshot)
 	}
 }
 
