@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"os"
+	"log"
 
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/application"
 )
@@ -17,12 +17,10 @@ func main() {
 
 	app, err := application.New()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to initialize application: %v\n", err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 
 	if err := app.Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "Application failed: %v\n", err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 }

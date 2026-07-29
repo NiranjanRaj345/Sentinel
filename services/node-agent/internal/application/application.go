@@ -47,5 +47,9 @@ func New() (*Application, error) {
 
 // Run starts the application.
 func (a *Application) Run() error {
+	a.logger.Info("Starting Sentinel Node Agent")
+	a.logger.Info("Configuration loaded")
+	a.logger.Info("HTTP server listening on %s", a.cfg.Server.Address())
+
 	return a.server.Start()
 }
