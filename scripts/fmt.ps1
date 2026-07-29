@@ -1,9 +1,15 @@
 Write-Host "Formatting Go source..."
 
-go fmt ./services/node-agent/...
+Push-Location services/node-agent
 
-if ($LASTEXITCODE -ne 0) {
-    exit $LASTEXITCODE
+go fmt ./...
+
+$exitCode = $LASTEXITCODE
+
+Pop-Location
+
+if ($exitCode -ne 0) {
+    exit $exitCode
 }
 
 Write-Host "Formatting completed successfully."

@@ -1,9 +1,15 @@
 Write-Host "Running Go tests..."
 
-go test ./services/node-agent/...
+Push-Location services/node-agent
 
-if ($LASTEXITCODE -ne 0) {
-    exit $LASTEXITCODE
+go test ./...
+
+$exitCode = $LASTEXITCODE
+
+Pop-Location
+
+if ($exitCode -ne 0) {
+    exit $exitCode
 }
 
 Write-Host "All tests passed."
