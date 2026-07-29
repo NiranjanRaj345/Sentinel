@@ -17,10 +17,20 @@ func getProcessInfo() ([]ProcessInfo, error) {
 			// Skip processes we cannot inspect.
 			continue
 		}
+		memoryInfo, err := proc.MemoryInfo()
+		if err != nil {
+			continue
+		}
+		cpuPercent, err := proc.CPUPercent()
+		if err != nil {
+			continue
+		}
 
 		processes = append(processes, ProcessInfo{
-			PID:  proc.Pid,
-			Name: name,
+			PID:         proc.Pid,
+			Name:        name,
+			CPUPercent:  cpuPercent,
+			MemoryBytes: memoryInfo.RSS,
 		})
 	}
 
