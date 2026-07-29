@@ -3,12 +3,22 @@ package server
 import (
 	"encoding/json"
 	"net/http"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/system"
 )
 
 type healthResponse struct {
 	Status  string `json:"status"`
 	Service string `json:"service"`
 	Version string `json:"version"`
+}
+
+func (s *Server) handleSystem(w http.ResponseWriter, r *http.Request) {
+	info := system.GetInfo()
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	_ = json.NewEncoder(w).Encode(info)
 }
 
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
