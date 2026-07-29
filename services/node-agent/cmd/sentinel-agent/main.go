@@ -1,6 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/application"
+)
 
 const (
 	ApplicationName    = "Sentinel Node Agent"
@@ -9,5 +14,11 @@ const (
 
 func main() {
 	fmt.Printf("%s %s\n", ApplicationName, ApplicationVersion)
-	fmt.Println("Starting Sentinel Node Agent...")
+
+	app := application.New()
+
+	if err := app.Run(); err != nil {
+		fmt.Fprintf(os.Stderr, "Application failed: %v\n", err)
+		os.Exit(1)
+	}
 }
