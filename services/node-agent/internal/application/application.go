@@ -1,17 +1,22 @@
 package application
 
-import "fmt"
+import (
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/server"
+)
 
-// Application represents the Sentinel Node Agent application.
-type Application struct{}
+// Application represents the Sentinel Node Agent.
+type Application struct {
+	server *server.Server
+}
 
 // New creates a new Application instance.
 func New() *Application {
-	return &Application{}
+	return &Application{
+		server: server.New(":8080"),
+	}
 }
 
 // Run starts the application.
 func (a *Application) Run() error {
-	fmt.Println("Application initialized.")
-	return nil
+	return a.server.Start()
 }
