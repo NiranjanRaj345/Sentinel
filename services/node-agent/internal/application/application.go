@@ -12,6 +12,7 @@ import (
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/server"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/service"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/storage/sqlite"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/stream"
 )
 
 const ConfigPath = "config.yaml"
@@ -22,6 +23,7 @@ type Application struct {
 	server    *server.Server
 	scheduler *scheduler.Scheduler
 	store     *sqlite.Store
+	hub       *stream.Hub
 }
 
 func New() (*Application, error) {
@@ -39,6 +41,7 @@ func New() (*Application, error) {
 	}
 
 	appLog := log.Component("application")
+	schedulerLog := log.Component("scheduler")
 
 	systemService := service.NewSystemService()
 
@@ -52,7 +55,8 @@ func New() (*Application, error) {
 		return nil, fmt.Errorf("open storage: %w", err)
 	}
 
-	metricsScheduler := scheduler.New(interval, log.Component("scheduler"), store)
+	hub := stream.New(log)
+	metricsScheduler := scheduler.New(interval, schedulerLog, store, hub)
 	metricsService := service.NewMetricsService(metricsScheduler)
 
 	srv := server.New(
@@ -61,6 +65,7 @@ func New() (*Application, error) {
 		systemService,
 		metricsService,
 		store,
+		hub,
 	)
 
 	return &Application{
@@ -69,12 +74,15 @@ func New() (*Application, error) {
 		server:    srv,
 		scheduler: metricsScheduler,
 		store:     store,
+		hub:       hub,
 	}, nil
 }
 
 func (a *Application) Start() error {
 	a.logger.Info("Starting Sentinel Node Agent")
 	a.logger.Info("Configuration loaded")
+
+	a.hub.Start()
 
 	if err := a.scheduler.Start(); err != nil {
 		return fmt.Errorf("start metrics scheduler: %w", err)
@@ -86,6 +94,7 @@ func (a *Application) Start() error {
 func (a *Application) Shutdown(ctx context.Context) error {
 	a.logger.Info("Shutting down Sentinel Node Agent")
 	a.scheduler.Stop()
+	a.hub.Stop()
 
 	if err := a.store.Close(); err != nil {
 		a.logger.Error("failed to close storage: %v", err)
