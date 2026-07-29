@@ -1,9 +1,13 @@
 package server
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/server/handlers"
+)
 
 func (s *Server) registerRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("/health", s.handleHealth)
+	mux.HandleFunc("/metrics", handlers.Metrics)
+	mux.HandleFunc("/health", handlers.Health)
 	mux.HandleFunc("/system", s.handleSystem)
-	mux.HandleFunc("/metrics", s.handleMetrics)
 }
