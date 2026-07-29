@@ -1,6 +1,11 @@
 package config
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+
+	"gopkg.in/yaml.v3"
+)
 
 type Config struct {
 	Server  ServerConfig  `yaml:"server"`
@@ -46,4 +51,22 @@ func Default() Config {
 
 func (s ServerConfig) Address() string {
 	return fmt.Sprintf("%s:%d", s.Host, s.Port)
+}
+
+func Load(path string) (Config, error) {
+	cfg := Default()
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return cfg, nil
+		}
+		return Config{}, err
+	}
+
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		return Config{}, err
+	}
+
+	return cfg, nil
 }
