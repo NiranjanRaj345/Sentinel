@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/logger"
@@ -47,4 +48,8 @@ func New(
 
 func (s *Server) Start() error {
 	return s.httpServer.ListenAndServe()
+}
+
+func (s *Server) Shutdown(ctx context.Context) error {
+	return s.httpServer.Shutdown(ctx)
 }

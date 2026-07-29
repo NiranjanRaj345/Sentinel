@@ -1,13 +1,15 @@
 package application
 
 import (
+	"context"
 	"fmt"
+
+	"os"
 
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/config"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/logger"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/server"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/service"
-	"os"
 )
 
 const ConfigPath = "config.yaml"
@@ -49,10 +51,15 @@ func New() (*Application, error) {
 }
 
 // Run starts the application.
-func (a *Application) Run() error {
+func (a *Application) Start() error {
 	a.logger.Info("Starting Sentinel Node Agent")
 	a.logger.Info("Configuration loaded")
 	a.logger.Info("HTTP server listening on %s", a.cfg.Server.Address())
 
 	return a.server.Start()
+}
+
+func (a *Application) Shutdown(ctx context.Context) error {
+	a.logger.Info("Shutting down Sentinel Node Agent")
+	return a.server.Shutdown(ctx)
 }
