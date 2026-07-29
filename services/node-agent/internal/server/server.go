@@ -3,12 +3,14 @@ package server
 import (
 	"fmt"
 	"net/http"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/service"
 )
 
 // Server owns the HTTP server lifecycle.
 type Server struct {
 	mux        *http.ServeMux
 	httpServer *http.Server
+	systemService *service.SystemService
 }
 
 // New creates a new HTTP server.
@@ -23,6 +25,7 @@ httpServer := &http.Server{
 server := &Server{
 	mux:        mux,
 	httpServer: httpServer,
+	systemService: service.NewSystemService(),
 }
 
 server.registerRoutes()

@@ -3,7 +3,6 @@ package server
 import (
 	"encoding/json"
 	"net/http"
-	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/system"
 )
 
 type healthResponse struct {
@@ -13,7 +12,7 @@ type healthResponse struct {
 }
 
 func (s *Server) handleSystem(w http.ResponseWriter, r *http.Request) {
-	info := system.GetInfo()
+	info := s.systemService.GetInfo()
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
