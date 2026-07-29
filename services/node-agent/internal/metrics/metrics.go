@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"github.com/shirou/gopsutil/v4/disk"
 	gnet "github.com/shirou/gopsutil/v4/net"
 	"os"
 )
@@ -61,28 +60,9 @@ func GetInfo() (Info, error) {
 	if err != nil {
 		return Info{}, err
 	}
-	partitions, err := disk.Partitions(false)
+	diskInfo, err := getDiskInfo()
 	if err != nil {
 		return Info{}, err
-	}
-
-	var disks []DiskInfo
-
-	for _, partition := range partitions {
-		usage, err := disk.Usage(partition.Mountpoint)
-		if err != nil {
-			continue
-		}
-
-		disks = append(disks, DiskInfo{
-			Device:       partition.Device,
-			MountPoint:   partition.Mountpoint,
-			FileSystem:   partition.Fstype,
-			TotalBytes:   usage.Total,
-			UsedBytes:    usage.Used,
-			FreeBytes:    usage.Free,
-			UsagePercent: usage.UsedPercent,
-		})
 	}
 
 	hostname, err := os.Hostname()
@@ -132,7 +112,7 @@ func GetInfo() (Info, error) {
 	info := Info{
 		CPU:    cpuInfo,
 		Memory: memoryInfo,
-		Disks:  disks,
+		Disks:  diskInfo,
 		Network: NetworkInfo{
 			Hostname:   hostname,
 			Interfaces: networkInterfaces,
