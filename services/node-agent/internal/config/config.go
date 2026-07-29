@@ -14,6 +14,7 @@ type Config struct {
 	Agent   AgentConfig   `yaml:"agent"`
 	Logging LoggingConfig `yaml:"logging"`
 	Metrics MetricsConfig `yaml:"metrics"`
+	Storage StorageConfig `yaml:"storage"`
 }
 
 type ServerConfig struct {
@@ -33,6 +34,10 @@ type MetricsConfig struct {
 	Interval string `yaml:"interval"`
 }
 
+type StorageConfig struct {
+	Path string `yaml:"path"`
+}
+
 func Default() Config {
 	return Config{
 		Server: ServerConfig{
@@ -47,6 +52,9 @@ func Default() Config {
 		},
 		Metrics: MetricsConfig{
 			Interval: "5s",
+		},
+		Storage: StorageConfig{
+			Path: "sentinel.db",
 		},
 	}
 }
@@ -69,6 +77,10 @@ func (c Config) Validate() error {
 	}
 
 	if err := c.Metrics.Validate(); err != nil {
+		return err
+	}
+
+	if err := c.Storage.Validate(); err != nil {
 		return err
 	}
 
@@ -110,6 +122,14 @@ func (c MetricsConfig) Validate() error {
 
 	if _, err := time.ParseDuration(c.Interval); err != nil {
 		return fmt.Errorf("metrics.interval must be a valid duration: %w", err)
+	}
+
+	return nil
+}
+
+func (c StorageConfig) Validate() error {
+	if c.Path == "" {
+		return fmt.Errorf("storage.path cannot be empty")
 	}
 
 	return nil

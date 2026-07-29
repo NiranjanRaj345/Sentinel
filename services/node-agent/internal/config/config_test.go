@@ -34,3 +34,11 @@ func TestMetricsValidate_InvalidInterval(t *testing.T) {
 		t.Fatal("expected error, got nil")
 	}
 }
+
+func TestStorageValidate_EmptyPath(t *testing.T) {
+	cfg := Default()
+	cfg.Storage.Path = ""
+	if err := cfg.Validate(); err == nil {
+		t.Fatal("expected error for empty storage path, got nil")
+	}
+}
