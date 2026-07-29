@@ -40,10 +40,11 @@ type NetworkInfo struct {
 }
 
 type Info struct {
-	CPU     CPUInfo     `json:"cpu"`
-	Memory  MemoryInfo  `json:"memory"`
-	Disks   []DiskInfo  `json:"disks"`
-	Network NetworkInfo `json:"network"`
+	CPU       CPUInfo       `json:"cpu"`
+	Memory    MemoryInfo    `json:"memory"`
+	Disks     []DiskInfo    `json:"disks"`
+	Network   NetworkInfo   `json:"network"`
+	Processes []ProcessInfo `json:"processes"`
 }
 
 func GetInfo() (Info, error) {
@@ -63,12 +64,17 @@ func GetInfo() (Info, error) {
 	if err != nil {
 		return Info{}, err
 	}
+	processInfo, err := getProcessInfo()
+	if err != nil {
+		return Info{}, err
+	}
 
 	info := Info{
-		CPU:     cpuInfo,
-		Memory:  memoryInfo,
-		Disks:   diskInfo,
-		Network: networkInfo,
+		CPU:       cpuInfo,
+		Memory:    memoryInfo,
+		Disks:     diskInfo,
+		Network:   networkInfo,
+		Processes: processInfo,
 	}
 
 	return info, nil
