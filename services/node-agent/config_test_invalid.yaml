@@ -1,0 +1,8 @@
+﻿server:
+  port: 70000
+agent:
+  name: test-node
+logging:
+  level: info
+metrics:
+  interval: 5s

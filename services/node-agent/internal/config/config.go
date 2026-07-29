@@ -3,7 +3,9 @@ package config
 import (
 	"fmt"
 	"os"
+	"time"
 
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/logger"
 	"gopkg.in/yaml.v3"
 )
 
@@ -51,6 +53,66 @@ func Default() Config {
 
 func (s ServerConfig) Address() string {
 	return fmt.Sprintf("%s:%d", s.Host, s.Port)
+}
+
+func (c Config) Validate() error {
+	if err := c.Server.Validate(); err != nil {
+		return err
+	}
+
+	if err := c.Agent.Validate(); err != nil {
+		return err
+	}
+
+	if err := c.Logging.Validate(); err != nil {
+		return err
+	}
+
+	if err := c.Metrics.Validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c ServerConfig) Validate() error {
+	if c.Host == "" {
+		return fmt.Errorf("server.host cannot be empty")
+	}
+
+	if c.Port < 1 || c.Port > 65535 {
+		return fmt.Errorf("server.port must be between 1 and 65535")
+	}
+
+	return nil
+}
+
+func (c AgentConfig) Validate() error {
+	if c.Name == "" {
+		return fmt.Errorf("agent.name cannot be empty")
+	}
+
+	return nil
+}
+
+func (c LoggingConfig) Validate() error {
+	if _, err := logger.ParseLevel(c.Level); err != nil {
+		return fmt.Errorf("logging.level: %w", err)
+	}
+
+	return nil
+}
+
+func (c MetricsConfig) Validate() error {
+	if c.Interval == "" {
+		return fmt.Errorf("metrics.interval cannot be empty")
+	}
+
+	if _, err := time.ParseDuration(c.Interval); err != nil {
+		return fmt.Errorf("metrics.interval must be a valid duration: %w", err)
+	}
+
+	return nil
 }
 
 func Load(path string) (Config, error) {

@@ -11,6 +11,7 @@ import (
 
 type Server struct {
 	httpServer     *http.Server
+	log            *logger.Logger
 	systemService  *service.SystemService
 	metricsService *service.MetricsService
 }
@@ -23,6 +24,7 @@ func New(
 ) *Server {
 
 	server := &Server{
+		log:            log,
 		systemService:  systemService,
 		metricsService: metricsService,
 	}
@@ -47,6 +49,7 @@ func New(
 }
 
 func (s *Server) Start() error {
+	s.log.Info("HTTP server listening on %s", s.httpServer.Addr)
 	return s.httpServer.ListenAndServe()
 }
 

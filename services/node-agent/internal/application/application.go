@@ -27,25 +27,30 @@ func New() (*Application, error) {
 	if err != nil {
 		return nil, fmt.Errorf("load config: %w", err)
 	}
+	if err := cfg.Validate(); err != nil {
+		return nil, fmt.Errorf("validate config: %w", err)
+	}
 
 	log, err := logger.NewFromString(cfg.Logging.Level, os.Stdout)
 	if err != nil {
 		return nil, fmt.Errorf("initialize logger: %w", err)
 	}
 
+	appLog := log.Component("application")
+
 	systemService := service.NewSystemService()
 	metricsService := service.NewMetricsService()
 
 	srv := server.New(
 		cfg.Server.Address(),
-		log,
+		log.Component("server"),
 		systemService,
 		metricsService,
 	)
 
 	return &Application{
 		cfg:    cfg,
-		logger: log,
+		logger: appLog,
 		server: srv,
 	}, nil
 }
@@ -54,7 +59,6 @@ func New() (*Application, error) {
 func (a *Application) Start() error {
 	a.logger.Info("Starting Sentinel Node Agent")
 	a.logger.Info("Configuration loaded")
-	a.logger.Info("HTTP server listening on %s", a.cfg.Server.Address())
 
 	return a.server.Start()
 }

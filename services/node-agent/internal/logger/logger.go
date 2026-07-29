@@ -6,8 +6,9 @@ import (
 )
 
 type Logger struct {
-	level Level
-	log   *log.Logger
+	level     Level
+	log       *log.Logger
+	component string
 }
 
 func New(level Level, out io.Writer) *Logger {
@@ -17,12 +18,29 @@ func New(level Level, out io.Writer) *Logger {
 	}
 }
 
+// Component returns a new logger that shares the same configuration
+// but prefixes every log message with the given component name.
+func (l *Logger) Component(name string) *Logger {
+	return &Logger{
+		level:     l.level,
+		log:       l.log,
+		component: name,
+	}
+}
+
 func (l *Logger) logMessage(level Level, format string, args ...any) {
 	if level < l.level {
 		return
 	}
 
-	prefix := "[" + level.String() + "] "
+	prefix := "[" + level.String() + "]"
+
+	if l.component != "" {
+		prefix += " [" + l.component + "]"
+	}
+
+	prefix += " "
+
 	l.log.Printf(prefix+format, args...)
 }
 
