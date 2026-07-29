@@ -14,7 +14,10 @@ type Server struct {
 }
 
 // New creates a new HTTP server.
-func New(addr string) *Server {
+func New(
+	addr string,
+	systemService *service.SystemService,
+) *Server {
 	mux := http.NewServeMux()
 
 httpServer := &http.Server{
@@ -23,9 +26,9 @@ httpServer := &http.Server{
 }
 
 server := &Server{
-	mux:        mux,
-	httpServer: httpServer,
-	systemService: service.NewSystemService(),
+	mux:           mux,
+	httpServer:    httpServer,
+	systemService: systemService,
 }
 
 server.registerRoutes()

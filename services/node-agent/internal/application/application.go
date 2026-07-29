@@ -2,6 +2,7 @@ package application
 
 import (
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/server"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/service"
 )
 
 // Application represents the Sentinel Node Agent.
@@ -11,8 +12,13 @@ type Application struct {
 
 // New creates a new Application instance.
 func New() *Application {
+	systemService := service.NewSystemService()
+
 	return &Application{
-		server: server.New(":8080"),
+		server: server.New(
+			":8080",
+			systemService,
+		),
 	}
 }
 
