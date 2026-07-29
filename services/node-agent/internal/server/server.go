@@ -34,6 +34,7 @@ func New(
 		mux,
 		middleware.Recovery(log),
 		middleware.RequestID,
+		middleware.Logging(log),
 	)
 
 	server.httpServer = &http.Server{
