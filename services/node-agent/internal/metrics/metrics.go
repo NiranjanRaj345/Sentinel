@@ -2,7 +2,6 @@ package metrics
 
 import (
 	"github.com/shirou/gopsutil/v4/disk"
-	"github.com/shirou/gopsutil/v4/mem"
 	gnet "github.com/shirou/gopsutil/v4/net"
 	"os"
 )
@@ -58,11 +57,10 @@ func GetInfo() (Info, error) {
 	if err != nil {
 		return Info{}, err
 	}
-	vm, err := mem.VirtualMemory()
+	memoryInfo, err := getMemoryInfo()
 	if err != nil {
 		return Info{}, err
 	}
-
 	partitions, err := disk.Partitions(false)
 	if err != nil {
 		return Info{}, err
@@ -132,13 +130,9 @@ func GetInfo() (Info, error) {
 	}
 
 	info := Info{
-		CPU: cpuInfo,
-		Memory: MemoryInfo{
-			TotalBytes:   vm.Total,
-			UsedBytes:    vm.Used,
-			UsagePercent: vm.UsedPercent,
-		},
-		Disks: disks,
+		CPU:    cpuInfo,
+		Memory: memoryInfo,
+		Disks:  disks,
 		Network: NetworkInfo{
 			Hostname:   hostname,
 			Interfaces: networkInterfaces,
