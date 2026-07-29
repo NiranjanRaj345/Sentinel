@@ -7,6 +7,7 @@ import (
 
 // Server owns the HTTP server lifecycle.
 type Server struct {
+	mux        *http.ServeMux
 	httpServer *http.Server
 }
 
@@ -14,14 +15,19 @@ type Server struct {
 func New(addr string) *Server {
 	mux := http.NewServeMux()
 
-	httpServer := &http.Server{
-		Addr:    addr,
-		Handler: mux,
-	}
+httpServer := &http.Server{
+	Addr:    addr,
+	Handler: mux,
+}
 
-	return &Server{
-		httpServer: httpServer,
-	}
+server := &Server{
+	mux:        mux,
+	httpServer: httpServer,
+}
+
+server.registerRoutes()
+
+return server
 }
 
 // Start begins listening for HTTP requests.
