@@ -60,6 +60,7 @@ func New() (*Application, error) {
 		log.Component("server"),
 		systemService,
 		metricsService,
+		store,
 	)
 
 	return &Application{
