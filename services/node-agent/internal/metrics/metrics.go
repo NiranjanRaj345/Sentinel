@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"github.com/shirou/gopsutil/v4/cpu"
 	"github.com/shirou/gopsutil/v4/disk"
 	"github.com/shirou/gopsutil/v4/mem"
 	gnet "github.com/shirou/gopsutil/v4/net"
@@ -55,11 +54,10 @@ type Info struct {
 }
 
 func GetInfo() (Info, error) {
-	cpuPercent, err := cpu.Percent(0, false)
+	cpuInfo, err := getCPUInfo()
 	if err != nil {
 		return Info{}, err
 	}
-
 	vm, err := mem.VirtualMemory()
 	if err != nil {
 		return Info{}, err
@@ -134,9 +132,7 @@ func GetInfo() (Info, error) {
 	}
 
 	info := Info{
-		CPU: CPUInfo{
-			UsagePercent: cpuPercent[0],
-		},
+		CPU: cpuInfo,
 		Memory: MemoryInfo{
 			TotalBytes:   vm.Total,
 			UsedBytes:    vm.Used,
