@@ -12,13 +12,18 @@ type Application struct {
 
 // New creates a new Application instance.
 func New() *Application {
+
 	systemService := service.NewSystemService()
+	metricsService := service.NewMetricsService()
+
+	server := server.New(
+		":8080",
+		systemService,
+		metricsService,
+	)
 
 	return &Application{
-		server: server.New(
-			":8080",
-			systemService,
-		),
+		server: server,
 	}
 }
 

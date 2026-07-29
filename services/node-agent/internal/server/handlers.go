@@ -32,3 +32,15 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 
 	_ = json.NewEncoder(w).Encode(response)
 }
+
+func (s *Server) handleMetrics(w http.ResponseWriter, r *http.Request) {
+	info, err := s.metricsService.GetInfo()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	json.NewEncoder(w).Encode(info)
+}

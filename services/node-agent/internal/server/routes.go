@@ -1,6 +1,9 @@
 package server
 
-func (s *Server) registerRoutes() {
-	s.mux.HandleFunc("/health", s.handleHealth)
-	s.mux.HandleFunc("/system", s.handleSystem)
+import "net/http"
+
+func (s *Server) registerRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("/health", s.handleHealth)
+	mux.HandleFunc("/system", s.handleSystem)
+	mux.HandleFunc("/metrics", s.handleMetrics)
 }
