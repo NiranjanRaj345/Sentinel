@@ -1,5 +1,7 @@
 package metrics
 
+import "time"
+
 type CPUInfo struct {
 	UsagePercent float64 `json:"usage_percent"`
 }
@@ -40,6 +42,7 @@ type NetworkInfo struct {
 }
 
 type Info struct {
+	Metadata  Metadata      `json:"metadata"`
 	CPU       CPUInfo       `json:"cpu"`
 	Memory    MemoryInfo    `json:"memory"`
 	Disks     []DiskInfo    `json:"disks"`
@@ -48,6 +51,7 @@ type Info struct {
 }
 
 func GetInfo() (Info, error) {
+	start := time.Now()
 	cpuInfo, err := getCPUInfo()
 	if err != nil {
 		return Info{}, err
@@ -68,14 +72,23 @@ func GetInfo() (Info, error) {
 	if err != nil {
 		return Info{}, err
 	}
+	end := time.Now()
+	duration := end.Sub(start)
 
-	info := Info{
+	return Info{
+		Metadata: Metadata{
+			Timestamp:            end,
+			CollectionDurationMS: duration.Milliseconds(),
+			Agent: AgentInfo{
+				Name:    "sentinel-node-agent",
+				Version: "0.2.0",
+			},
+		},
+
 		CPU:       cpuInfo,
 		Memory:    memoryInfo,
 		Disks:     diskInfo,
 		Network:   networkInfo,
 		Processes: processInfo,
-	}
-
-	return info, nil
+	}, nil
 }
