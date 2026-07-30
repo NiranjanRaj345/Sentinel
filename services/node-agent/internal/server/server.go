@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/auth"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/dashboard"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/logger"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/node"
@@ -15,16 +16,17 @@ import (
 )
 
 type Server struct {
-	httpServer       *http.Server
-	log              *logger.Logger
-	systemService    *service.SystemService
-	metricsService   *service.MetricsService
-	store            *sqlite.Store
-	hub              *stream.Hub
-	dashboard        *dashboard.Service
-	dashboardHub     *dashboard.Hub
-	nodeService      *node.Service
+	httpServer        *http.Server
+	log               *logger.Logger
+	systemService     *service.SystemService
+	metricsService    *service.MetricsService
+	store             *sqlite.Store
+	hub               *stream.Hub
+	dashboard         *dashboard.Service
+	dashboardHub      *dashboard.Hub
+	nodeService       *node.Service
 	operationsService *operations.Service
+	authStore         *auth.TokenStore
 }
 
 func New(
@@ -38,18 +40,20 @@ func New(
 	dashboardHub *dashboard.Hub,
 	nodeService *node.Service,
 	operationsService *operations.Service,
+	authStore *auth.TokenStore,
 ) *Server {
 
 	server := &Server{
-		log:              log,
-		systemService:    systemService,
-		metricsService:   metricsService,
-		store:            store,
-		hub:              hub,
-		dashboard:        dashboard,
-		dashboardHub:     dashboardHub,
-		nodeService:      nodeService,
+		log:               log,
+		systemService:     systemService,
+		metricsService:    metricsService,
+		store:             store,
+		hub:               hub,
+		dashboard:         dashboard,
+		dashboardHub:      dashboardHub,
+		nodeService:       nodeService,
 		operationsService: operationsService,
+		authStore:         authStore,
 	}
 
 	mux := http.NewServeMux()

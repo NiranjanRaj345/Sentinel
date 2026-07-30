@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/alert"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/auth"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/config"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/dashboard"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/logger"
@@ -55,14 +56,6 @@ func New() (*Application, error) {
 	schedulerLog := log.Component("scheduler")
 
 	systemService := service.NewSystemService()
-	nodeService := node.NewService(nodeprovider.NewLinuxProvider(log.Component("node")), log.Component("node"))
-	operationsProvider := opprovider.NewLinuxProvider(log.Component("operations"), nil)
-	operationsService := operations.NewService(
-		operationsProvider,
-		operations.NewAuditor(log.Component("operations")),
-		operations.NewValidator(operationsProvider),
-		log.Component("operations"),
-	)
 
 	interval, err := time.ParseDuration(cfg.Metrics.Interval)
 	if err != nil {
@@ -82,6 +75,21 @@ func New() (*Application, error) {
 	dashboardService := dashboard.NewService(metricsScheduler, engine, cfg, dashboardHub)
 	metricsScheduler.SetPublishDashboard(dashboardService.PublishOverview)
 
+	nodeProvider := nodeprovider.NewLinuxProvider(log.Component("node"))
+	nodeService := node.NewService(nodeProvider, log.Component("node"))
+	operationsProvider := opprovider.NewLinuxProvider(log.Component("operations"), nil)
+	operationsService := operations.NewService(
+		operationsProvider,
+		operations.NewAuditor(log.Component("operations")),
+		operations.NewValidator(operationsProvider),
+		log.Component("operations"),
+	)
+
+	authStore, err := auth.FromConfig(cfg.Auth)
+	if err != nil {
+		return nil, fmt.Errorf("initialize auth: %w", err)
+	}
+
 	srv := server.New(
 		cfg.Server.Address(),
 		log.Component("server"),
@@ -93,6 +101,7 @@ func New() (*Application, error) {
 		dashboardHub,
 		nodeService,
 		operationsService,
+		authStore,
 	)
 
 	return &Application{

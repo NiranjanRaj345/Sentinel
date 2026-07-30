@@ -3,13 +3,37 @@ import type { CapabilitiesResponse, DashboardOverview, HistoryResponse, Operatio
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8080";
 
+function getAuthHeaders(): HeadersInit {
+  const headers: HeadersInit = {
+    Accept: "application/json",
+  };
+
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("sentinel_token");
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+  }
+
+  return headers;
+}
+
+async function handleUnauthorized() {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("sentinel_token");
+  }
+}
+
 async function fetchOverview(): Promise<DashboardOverview> {
   const response = await fetch(`${API_BASE}/dashboard/overview`, {
     cache: "no-store",
-    headers: {
-      Accept: "application/json",
-    },
+    headers: getAuthHeaders(),
   });
+
+  if (response.status === 401 || response.status === 403) {
+    await handleUnauthorized();
+    throw new Error("Unauthorized");
+  }
 
   if (!response.ok) {
     throw new Error(`Failed to load dashboard overview: ${response.status}`);
@@ -33,11 +57,14 @@ async function fetchHistory(period: string): Promise<HistoryResponse> {
     `${API_BASE}/dashboard/history?period=${encodeURIComponent(period)}`,
     {
       cache: "no-store",
-      headers: {
-        Accept: "application/json",
-      },
+      headers: getAuthHeaders(),
     }
   );
+
+  if (response.status === 401 || response.status === 403) {
+    await handleUnauthorized();
+    throw new Error("Unauthorized");
+  }
 
   if (!response.ok) {
     throw new Error(`Failed to load history: ${response.status}`);
@@ -57,10 +84,13 @@ export function useDashboardHistory(period: string) {
 async function fetchCapabilities(): Promise<CapabilitiesResponse> {
   const response = await fetch(`${API_BASE}/dashboard/capabilities`, {
     cache: "no-store",
-    headers: {
-      Accept: "application/json",
-    },
+    headers: getAuthHeaders(),
   });
+
+  if (response.status === 401 || response.status === 403) {
+    await handleUnauthorized();
+    throw new Error("Unauthorized");
+  }
 
   if (!response.ok) {
     throw new Error(`Failed to load capabilities: ${response.status}`);
@@ -81,12 +111,14 @@ async function executeOperation(action: string, confirm: boolean): Promise<Opera
   const response = await fetch(`${API_BASE}/operations`, {
     method: "POST",
     cache: "no-store",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify({ action, confirm }),
   });
+
+  if (response.status === 401 || response.status === 403) {
+    await handleUnauthorized();
+    throw new Error("Unauthorized");
+  }
 
   if (!response.ok) {
     const text = await response.text();
