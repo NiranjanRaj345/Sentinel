@@ -20,14 +20,15 @@ import (
 const ConfigPath = "config.yaml"
 
 type Application struct {
-	cfg       config.Config
-	logger    *logger.Logger
-	server    *server.Server
-	scheduler *scheduler.Scheduler
-	store     *sqlite.Store
-	hub       *stream.Hub
-	engine    *alert.Engine
-	dashboard *dashboard.Service
+	cfg          config.Config
+	logger       *logger.Logger
+	server       *server.Server
+	scheduler    *scheduler.Scheduler
+	store        *sqlite.Store
+	hub          *stream.Hub
+	engine       *alert.Engine
+	dashboard    *dashboard.Service
+	dashboardHub *dashboard.Hub
 }
 
 func New() (*Application, error) {
@@ -61,9 +62,11 @@ func New() (*Application, error) {
 
 	hub := stream.New(log)
 	engine := alert.New(cfg.Alerts.Rules, schedulerLog)
+	dashboardHub := dashboard.NewHub(log.Component("dashboard"))
 	metricsScheduler := scheduler.New(interval, schedulerLog, store, hub, engine)
 	metricsService := service.NewMetricsService(metricsScheduler)
-	dashboardService := dashboard.NewService(metricsScheduler, engine, cfg)
+	dashboardService := dashboard.NewService(metricsScheduler, engine, cfg, dashboardHub)
+	metricsScheduler.SetPublishDashboard(dashboardService.PublishOverview)
 
 	srv := server.New(
 		cfg.Server.Address(),
@@ -73,17 +76,19 @@ func New() (*Application, error) {
 		store,
 		hub,
 		dashboardService,
+		dashboardHub,
 	)
 
 	return &Application{
-		cfg:       cfg,
-		logger:    appLog,
-		server:    srv,
-		scheduler: metricsScheduler,
-		store:     store,
-		hub:       hub,
-		engine:    engine,
-		dashboard: dashboardService,
+		cfg:          cfg,
+		logger:       appLog,
+		server:       srv,
+		scheduler:    metricsScheduler,
+		store:        store,
+		hub:          hub,
+		engine:       engine,
+		dashboard:    dashboardService,
+		dashboardHub: dashboardHub,
 	}, nil
 }
 
@@ -92,6 +97,7 @@ func (a *Application) Start() error {
 	a.logger.Info("Configuration loaded")
 
 	a.hub.Start()
+	a.dashboardHub.Start()
 
 	if err := a.scheduler.Start(); err != nil {
 		return fmt.Errorf("start metrics scheduler: %w", err)
@@ -104,6 +110,7 @@ func (a *Application) Shutdown(ctx context.Context) error {
 	a.logger.Info("Shutting down Sentinel Node Agent")
 	a.scheduler.Stop()
 	a.hub.Stop()
+	a.dashboardHub.Stop()
 
 	if err := a.store.Close(); err != nil {
 		a.logger.Error("failed to close storage: %v", err)

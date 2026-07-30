@@ -15,18 +15,21 @@ type Service struct {
 	engine    *alert.Engine
 	cfg       config.Config
 	startedAt time.Time
+	hub       *Hub
 }
 
 func NewService(
 	scheduler *scheduler.Scheduler,
 	engine *alert.Engine,
 	cfg config.Config,
+	hub *Hub,
 ) *Service {
 	return &Service{
 		scheduler: scheduler,
 		engine:    engine,
 		cfg:       cfg,
 		startedAt: time.Now(),
+		hub:       hub,
 	}
 }
 
@@ -62,4 +65,17 @@ func (s *Service) Overview() Overview {
 		ActiveAlerts:   events,
 		LastCollection: stats.LastCollectionAt,
 	}
+}
+
+func (s *Service) PublishOverview() {
+	if s.hub == nil {
+		return
+	}
+
+	overview := s.Overview()
+	s.hub.Broadcast(Message{
+		Type:      "overview",
+		Timestamp: time.Now().UTC(),
+		Data:      overview,
+	})
 }

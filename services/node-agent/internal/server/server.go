@@ -20,6 +20,7 @@ type Server struct {
 	store          *sqlite.Store
 	hub            *stream.Hub
 	dashboard      *dashboard.Service
+	dashboardHub   *dashboard.Hub
 }
 
 func New(
@@ -30,6 +31,7 @@ func New(
 	store *sqlite.Store,
 	hub *stream.Hub,
 	dashboard *dashboard.Service,
+	dashboardHub *dashboard.Hub,
 ) *Server {
 
 	server := &Server{
@@ -39,6 +41,7 @@ func New(
 		store:          store,
 		hub:            hub,
 		dashboard:      dashboard,
+		dashboardHub:   dashboardHub,
 	}
 
 	mux := http.NewServeMux()
