@@ -10,3 +10,36 @@ logging:
 
 metrics:
   interval: 5s
+
+storage:
+  path: sentinel.db
+
+alerts:
+  rules:
+    - id: cpu-warning
+      name: CPU Usage
+      metric: cpu.usage
+      operator: ">"
+      threshold: 80
+      severity: warning
+
+    - id: cpu-critical
+      name: CPU Usage
+      metric: cpu.usage
+      operator: ">="
+      threshold: 90
+      severity: critical
+
+    - id: memory-warning
+      name: Memory Usage
+      metric: memory.used_percent
+      operator: ">"
+      threshold: 85
+      severity: warning
+
+    - id: disk-critical
+      name: Disk Usage
+      metric: disk.used_percent
+      operator: ">"
+      threshold: 95
+      severity: critical

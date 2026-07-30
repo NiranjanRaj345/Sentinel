@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/alert"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/logger"
 	"gopkg.in/yaml.v3"
 )
@@ -15,6 +16,7 @@ type Config struct {
 	Logging LoggingConfig `yaml:"logging"`
 	Metrics MetricsConfig `yaml:"metrics"`
 	Storage StorageConfig `yaml:"storage"`
+	Alerts  AlertsConfig  `yaml:"alerts"`
 }
 
 type ServerConfig struct {
@@ -38,6 +40,10 @@ type StorageConfig struct {
 	Path string `yaml:"path"`
 }
 
+type AlertsConfig struct {
+	Rules []alert.Rule `yaml:"rules"`
+}
+
 func Default() Config {
 	return Config{
 		Server: ServerConfig{
@@ -55,6 +61,46 @@ func Default() Config {
 		},
 		Storage: StorageConfig{
 			Path: "sentinel.db",
+		},
+		Alerts: AlertsConfig{
+			Rules: []alert.Rule{
+				{
+					ID:        "cpu-warning",
+					Name:      "CPU Usage",
+					Metric:    "cpu.usage",
+					Operator:  alert.GreaterThan,
+					Threshold: 80.0,
+					Severity:  alert.SeverityWarning,
+					Enabled:   true,
+				},
+				{
+					ID:        "cpu-critical",
+					Name:      "CPU Usage",
+					Metric:    "cpu.usage",
+					Operator:  alert.GreaterThanOrEqual,
+					Threshold: 90.0,
+					Severity:  alert.SeverityCritical,
+					Enabled:   true,
+				},
+				{
+					ID:        "memory-warning",
+					Name:      "Memory Usage",
+					Metric:    "memory.used_percent",
+					Operator:  alert.GreaterThan,
+					Threshold: 85.0,
+					Severity:  alert.SeverityWarning,
+					Enabled:   true,
+				},
+				{
+					ID:        "disk-critical",
+					Name:      "Disk Usage",
+					Metric:    "disk.used_percent",
+					Operator:  alert.GreaterThan,
+					Threshold: 95.0,
+					Severity:  alert.SeverityCritical,
+					Enabled:   true,
+				},
+			},
 		},
 	}
 }
@@ -81,6 +127,10 @@ func (c Config) Validate() error {
 	}
 
 	if err := c.Storage.Validate(); err != nil {
+		return err
+	}
+
+	if err := c.Alerts.Validate(); err != nil {
 		return err
 	}
 
@@ -130,6 +180,16 @@ func (c MetricsConfig) Validate() error {
 func (c StorageConfig) Validate() error {
 	if c.Path == "" {
 		return fmt.Errorf("storage.path cannot be empty")
+	}
+
+	return nil
+}
+
+func (c AlertsConfig) Validate() error {
+	for _, rule := range c.Rules {
+		if err := rule.Validate(); err != nil {
+			return err
+		}
 	}
 
 	return nil
