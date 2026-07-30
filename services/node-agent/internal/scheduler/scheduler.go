@@ -19,6 +19,8 @@ type Scheduler struct {
 	hub      *stream.Hub
 	engine   *alert.Engine
 
+	publishDashboard func()
+
 	latest  metrics.Info
 	lastErr error
 
@@ -49,7 +51,13 @@ func (s *Scheduler) Stats() Stats {
 	return s.stats
 }
 
-func New(interval time.Duration, log *logger.Logger, store *sqlite.Store, hub *stream.Hub, engine *alert.Engine) *Scheduler {
+func New(
+	interval time.Duration,
+	log *logger.Logger,
+	store *sqlite.Store,
+	hub *stream.Hub,
+	engine *alert.Engine,
+) *Scheduler {
 	return &Scheduler{
 		interval: interval,
 		log:      log,
@@ -57,6 +65,10 @@ func New(interval time.Duration, log *logger.Logger, store *sqlite.Store, hub *s
 		hub:      hub,
 		engine:   engine,
 	}
+}
+
+func (s *Scheduler) SetPublishDashboard(fn func()) {
+	s.publishDashboard = fn
 }
 
 func (s *Scheduler) Start() error {
@@ -85,6 +97,10 @@ func (s *Scheduler) Start() error {
 
 	if s.engine != nil {
 		s.engine.Evaluate(snapshot)
+	}
+
+	if s.publishDashboard != nil {
+		s.publishDashboard()
 	}
 
 	if s.hub != nil {
@@ -151,6 +167,10 @@ func (s *Scheduler) collect() {
 
 	if s.engine != nil {
 		s.engine.Evaluate(snapshot)
+	}
+
+	if s.publishDashboard != nil {
+		s.publishDashboard()
 	}
 
 	if s.hub != nil {

@@ -19,7 +19,7 @@ func TestOverview_NoAlerts_ReturnsHealthy(t *testing.T) {
 	engine := alert.New(nil, logger.New(logger.Info, io.Discard))
 	cfg := config.Default()
 
-	service := NewService(s, engine, cfg)
+	service := NewService(s, engine, cfg, nil)
 	overview := service.Overview()
 
 	if overview.Status != "healthy" {
@@ -52,7 +52,7 @@ func TestOverview_WarningAlert_ReturnsWarning(t *testing.T) {
 	engine := alert.New(rules, logger.New(logger.Info, io.Discard))
 	cfg := config.Default()
 
-	service := NewService(s, engine, cfg)
+	service := NewService(s, engine, cfg, nil)
 	overview := service.Overview()
 
 	if overview.Status != "warning" {
@@ -82,7 +82,7 @@ func TestOverview_CriticalAlert_ReturnsCritical(t *testing.T) {
 	engine := alert.New(rules, logger.New(logger.Info, io.Discard))
 	cfg := config.Default()
 
-	service := NewService(s, engine, cfg)
+	service := NewService(s, engine, cfg, nil)
 	overview := service.Overview()
 
 	if overview.Status != "critical" {
@@ -121,7 +121,7 @@ func TestOverview_MixedAlerts_PrefersCritical(t *testing.T) {
 	engine := alert.New(rules, logger.New(logger.Info, io.Discard))
 	cfg := config.Default()
 
-	service := NewService(s, engine, cfg)
+	service := NewService(s, engine, cfg, nil)
 	overview := service.Overview()
 
 	if overview.Status != "critical" {
@@ -160,7 +160,7 @@ func TestOverview_AlertsSortedByTriggerTime(t *testing.T) {
 	engine := alert.New(rules, logger.New(logger.Info, io.Discard))
 	cfg := config.Default()
 
-	service := NewService(s, engine, cfg)
+	service := NewService(s, engine, cfg, nil)
 	overview := service.Overview()
 
 	if len(overview.ActiveAlerts) != 2 {

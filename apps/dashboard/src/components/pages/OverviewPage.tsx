@@ -1,10 +1,13 @@
 "use client";
 
+import React from "react";
 import { useDashboardOverview } from "@/services/dashboard";
+import { useDashboardSocket, ConnectionStatus } from "@/hooks/useDashboardSocket";
 import { Card } from "@/components/ui/Card";
 import { clsx } from "clsx";
 import type { DashboardOverview, DashboardStatus } from "@/types/dashboard";
 import { MetricCard } from "@/components/pages/MetricCard";
+import { Wifi, WifiOff, RefreshCw } from "lucide-react";
 
 const statusConfig: Record<
   DashboardStatus,
@@ -14,6 +17,28 @@ const statusConfig: Record<
   warning: { label: "Warning", color: "text-amber-400" },
   critical: { label: "Critical", color: "text-rose-400" },
   offline: { label: "Offline", color: "text-slate-400" },
+};
+
+const connectionConfig: Record<
+  ConnectionStatus,
+  { label: string; color: string; icon: React.ReactNode }
+> = {
+  live: { label: "Live", color: "text-emerald-400", icon: <Wifi className="h-4 w-4" /> },
+  connecting: {
+    label: "Connecting",
+    color: "text-amber-400",
+    icon: <RefreshCw className="h-4 w-4 animate-spin" />,
+  },
+  reconnecting: {
+    label: "Reconnecting",
+    color: "text-amber-400",
+    icon: <RefreshCw className="h-4 w-4 animate-spin" />,
+  },
+  disconnected: {
+    label: "Disconnected",
+    color: "text-rose-400",
+    icon: <WifiOff className="h-4 w-4" />,
+  },
 };
 
 function formatUptime(uptimeMs: number) {
@@ -40,6 +65,7 @@ function formatBytes(value: number) {
 
 export function OverviewPage() {
   const { data, isLoading, isError } = useDashboardOverview();
+  const { status } = useDashboardSocket();
 
   if (isLoading) {
     return (
@@ -61,7 +87,8 @@ export function OverviewPage() {
     );
   }
 
-  const status = statusConfig[data.status] ?? statusConfig.offline;
+  const nodeStatus = statusConfig[data.status] ?? statusConfig.offline;
+  const connection = connectionConfig[status];
 
   return (
     <div className="space-y-6">
@@ -79,8 +106,14 @@ export function OverviewPage() {
         <div className="grid gap-4 md:grid-cols-3">
           <div>
             <p className="text-xs text-slate-400">Status</p>
-            <p className={`text-lg font-semibold ${status.color}`}>
-              {status.label}
+            <p className={`text-lg font-semibold ${nodeStatus.color}`}>
+              {nodeStatus.label}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-slate-400">Connection</p>
+            <p className={`text-lg font-semibold ${connection.color}`}>
+              {connection.label}
             </p>
           </div>
           <div>

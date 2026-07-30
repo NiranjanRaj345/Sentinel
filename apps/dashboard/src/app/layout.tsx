@@ -21,7 +21,7 @@ export default function RootLayout({
 
   return (
     <html lang="en">
-      <body>
+      <body suppressHydrationWarning>
         <QueryClientProvider client={client}>{children}</QueryClientProvider>
       </body>
     </html>
