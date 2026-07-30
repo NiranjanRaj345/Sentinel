@@ -1,11 +1,11 @@
 "use client";
 
 import React from "react";
-import { useDashboardOverview } from "@/services/dashboard";
+import { useDashboardOverview, useDashboardCapabilities } from "@/services/dashboard";
 import { useDashboardSocket, ConnectionStatus } from "@/hooks/useDashboardSocket";
 import { Card } from "@/components/ui/Card";
 import { clsx } from "clsx";
-import type { DashboardOverview, DashboardStatus } from "@/types/dashboard";
+import type { CapabilityStatus, DashboardOverview, DashboardStatus } from "@/types/dashboard";
 import { MetricCard } from "@/components/pages/MetricCard";
 import { Wifi, WifiOff, RefreshCw } from "lucide-react";
 
@@ -66,6 +66,7 @@ function formatBytes(value: number) {
 export function OverviewPage() {
   const { data, isLoading, isError } = useDashboardOverview();
   const { status } = useDashboardSocket();
+  const { data: capabilities } = useDashboardCapabilities();
 
   if (isLoading) {
     return (
@@ -89,6 +90,41 @@ export function OverviewPage() {
 
   const nodeStatus = statusConfig[data.status] ?? statusConfig.offline;
   const connection = connectionConfig[status];
+
+  const capabilityStatus: Record<string, CapabilityStatus> = {};
+  if (capabilities?.capabilities) {
+    for (const cap of capabilities.capabilities) {
+      capabilityStatus[cap.capability] = cap;
+    }
+  }
+
+  const capabilityCards = [
+    {
+      key: "monitoring",
+      label: "Monitoring",
+      status: capabilityStatus["monitoring"],
+    },
+    {
+      key: "remote_desktop",
+      label: "Remote Desktop",
+      status: capabilityStatus["remote_desktop"],
+    },
+    {
+      key: "vpn",
+      label: "VPN",
+      status: capabilityStatus["vpn"],
+    },
+    {
+      key: "guardian",
+      label: "Guardian",
+      status: capabilityStatus["guardian"],
+    },
+    {
+      key: "observer",
+      label: "Observer",
+      status: capabilityStatus["observer"],
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -161,6 +197,41 @@ export function OverviewPage() {
           description="Last known throughput"
         />
       </div>
+
+      <Card title="Capabilities" description="What this node can currently do.">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {capabilityCards.map((item) => {
+            const status = item.status;
+            const isAvailable = status?.available ?? false;
+            const state = status?.state ?? "unknown";
+            const details = status?.details ?? "";
+
+            const stateColor =
+              state === "active" || state === "ready" || state === "connected"
+                ? "text-emerald-400"
+                : state === "missing" || state === "unavailable"
+                  ? "text-rose-400"
+                  : "text-amber-400";
+
+            const icon = isAvailable ? "●" : "○";
+
+            return (
+              <div
+                key={item.key}
+                className="rounded-lg border border-white/5 bg-white/5 px-3 py-2"
+              >
+                <p className="text-sm font-medium text-white">{item.label}</p>
+                <p className={`text-xs ${stateColor}`}>
+                  {icon} {state}
+                </p>
+                {details && (
+                  <p className="text-xs text-slate-400">{details}</p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </Card>
 
       <Card title="Active Alerts" description="Rules currently triggered.">
         {data.activeAlerts.length === 0 ? (
