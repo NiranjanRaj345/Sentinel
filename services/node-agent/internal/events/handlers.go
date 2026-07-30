@@ -6,6 +6,10 @@ import (
 	"net/http"
 )
 
+type EventsResponse struct {
+	Events []Event `json:"events"`
+}
+
 func EventsRecent(service *Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
@@ -20,7 +24,7 @@ func EventsRecent(service *Service) http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(eventsList); err != nil {
+		if err := json.NewEncoder(w).Encode(EventsResponse{Events: eventsList}); err != nil {
 			http.Error(w, "failed to encode response", http.StatusInternalServerError)
 		}
 	}

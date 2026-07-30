@@ -133,3 +133,17 @@ func TestIsExpired_PastExpiry_ReturnsTrue(t *testing.T) {
 		t.Fatal("expected expired token")
 	}
 }
+
+func TestTokenStore_Empty_NoTokens(t *testing.T) {
+	store := NewTokenStore(nil)
+	if !store.Empty() {
+		t.Fatal("expected empty store")
+	}
+}
+
+func TestTokenStore_Empty_WithTokens(t *testing.T) {
+	store := NewTokenStore([]Token{{Name: "test", Value: "secret"}})
+	if store.Empty() {
+		t.Fatal("expected non-empty store")
+	}
+}

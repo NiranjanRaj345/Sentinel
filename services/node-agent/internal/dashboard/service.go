@@ -60,7 +60,7 @@ func (s *Service) Overview() Overview {
 		NodeName:       s.cfg.Agent.Name,
 		Version:        version.Build.Version,
 		Status:         status,
-		Uptime:         time.Since(s.startedAt),
+		UptimeMs:       time.Since(s.startedAt).Milliseconds(),
 		Snapshot:       snapshot,
 		ActiveAlerts:   events,
 		LastCollection: stats.LastCollectionAt,

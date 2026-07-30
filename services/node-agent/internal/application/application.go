@@ -17,6 +17,8 @@ import (
 	nodeprovider "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/node/providers/linux"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/operations"
 	opprovider "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/operations/providers/linux"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/rules"
+	rulesSQLite "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/rules/storage/sqlite"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/scheduler"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/server"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/service"
@@ -39,6 +41,7 @@ type Application struct {
 	nodeService       *node.Service
 	operationsService *operations.Service
 	eventsService     *events.Service
+	rulesService      *rules.Service
 }
 
 func New() (*Application, error) {
@@ -83,6 +86,19 @@ func New() (*Application, error) {
 		return nil, fmt.Errorf("open events storage: %w", err)
 	}
 
+	rulesRepo, err := rulesSQLite.OpenRules(cfg.Storage.Path)
+	if err != nil {
+		return nil, fmt.Errorf("open rules storage: %w", err)
+	}
+
+	rulesService := rules.NewService(rulesRepo, nil, nil, log.Component("rules"))
+
+	for _, rule := range rules.SeedRules() {
+		if err := rulesRepo.Save(context.Background(), rule); err != nil {
+			return nil, fmt.Errorf("seed rule %s: %w", rule.ID, err)
+		}
+	}
+
 	eventsService := events.NewService(eventRepo, nil, log.Component("events"))
 
 	operationsService := operations.NewService(
@@ -123,6 +139,7 @@ func New() (*Application, error) {
 		operationsService,
 		authStore,
 		eventsService,
+		rulesService,
 	)
 
 	return &Application{
@@ -138,6 +155,7 @@ func New() (*Application, error) {
 		nodeService:       nodeService,
 		operationsService: operationsService,
 		eventsService:     eventsService,
+		rulesService:      rulesService,
 	}, nil
 }
 
@@ -163,6 +181,10 @@ func (a *Application) Shutdown(ctx context.Context) error {
 
 	if err := a.store.Close(); err != nil {
 		a.logger.Error("failed to close storage: %v", err)
+	}
+
+	if err := a.eventsService.Close(); err != nil {
+		a.logger.Error("failed to close events storage: %v", err)
 	}
 
 	return a.server.Shutdown(ctx)

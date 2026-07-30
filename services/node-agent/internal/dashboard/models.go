@@ -11,7 +11,7 @@ type Overview struct {
 	NodeName       string        `json:"nodeName"`
 	Version        string        `json:"version"`
 	Status         string        `json:"status"`
-	Uptime         time.Duration `json:"uptime"`
+	UptimeMs       int64         `json:"uptimeMs"`
 	Snapshot       metrics.Info  `json:"snapshot"`
 	ActiveAlerts   []alert.Event `json:"activeAlerts"`
 	LastCollection time.Time     `json:"lastCollection"`

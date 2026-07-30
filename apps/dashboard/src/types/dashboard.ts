@@ -111,3 +111,22 @@ export type ActivityEvent = {
 export type EventsResponse = {
   events: ActivityEvent[];
 };
+
+export type RuleCondition = {
+  field: string;
+  operator: string;
+  value: string;
+};
+
+export type Rule = {
+  id: string;
+  name: string;
+  enabled: boolean;
+  trigger: string;
+  conditions: RuleCondition[];
+  actions: string[];
+};
+
+export type RulesResponse = {
+  rules: Rule[];
+};

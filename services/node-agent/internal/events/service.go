@@ -66,6 +66,13 @@ func (s *Service) Recent(limit int) ([]Event, error) {
 	return s.repo.Recent(limit)
 }
 
+func (s *Service) Close() error {
+	if s == nil || s.repo == nil {
+		return nil
+	}
+	return s.repo.Close()
+}
+
 func generateID() string {
 	var b [8]byte
 	_, _ = rand.Read(b[:])

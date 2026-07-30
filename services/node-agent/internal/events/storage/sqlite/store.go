@@ -52,13 +52,6 @@ func OpenEvents(path string) (*Store, error) {
 	return &Store{db: db}, nil
 }
 
-func (s *Store) Close() error {
-	if s == nil || s.db == nil {
-		return nil
-	}
-	return s.db.Close()
-}
-
 func (s *Store) Save(ctx context.Context, event eventrepo.Event) error {
 	if s == nil || s.db == nil {
 		return fmt.Errorf("events store is not open")
@@ -124,4 +117,11 @@ func (s *Store) Recent(limit int) ([]eventrepo.Event, error) {
 	}
 
 	return eventsList, nil
+}
+
+func (s *Store) Close() error {
+	if s == nil || s.db == nil {
+		return nil
+	}
+	return s.db.Close()
 }

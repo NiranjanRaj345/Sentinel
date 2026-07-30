@@ -7,6 +7,7 @@ import (
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/dashboard"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/events"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/operations"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/rules"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/server/handlers"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/stream"
 )
@@ -24,19 +25,20 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.Handle("/dashboard/capabilities", s.authRead(handlers.Capabilities(s.nodeService)))
 
 	mux.Handle("/events/recent", s.authRead(events.EventsRecent(s.eventsService)))
+	mux.Handle("/rules", s.authRead(rules.NewHandler(s.rulesService)))
 
 	mux.Handle("/operations", s.authOperate(operations.NewHandler(s.operationsService, s.log)))
 }
 
 func (s *Server) authRead(next http.Handler) http.Handler {
-	if s.authStore == nil {
+	if s.authStore == nil || s.authStore.Empty() {
 		return next
 	}
 	return auth.Authenticate(s.authStore)(auth.Authorize(auth.PermissionRead)(next))
 }
 
 func (s *Server) authOperate(next http.Handler) http.Handler {
-	if s.authStore == nil {
+	if s.authStore == nil || s.authStore.Empty() {
 		return next
 	}
 	return auth.Authenticate(s.authStore)(auth.Authorize(auth.PermissionOperate)(next))

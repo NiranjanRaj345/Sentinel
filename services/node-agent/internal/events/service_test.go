@@ -33,6 +33,10 @@ func (f *fakeRepo) Recent(limit int) ([]Event, error) {
 	return f.events[start:], nil
 }
 
+func (f *fakeRepo) Close() error {
+	return nil
+}
+
 type fakePublisher struct {
 	events []Event
 	err    error

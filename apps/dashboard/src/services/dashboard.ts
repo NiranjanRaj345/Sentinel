@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { ActivityEvent, CapabilitiesResponse, DashboardOverview, EventsResponse, HistoryResponse, OperationResult } from "@/types/dashboard";
+import type { ActivityEvent, CapabilitiesResponse, DashboardOverview, EventsResponse, HistoryResponse, OperationResult, Rule, RulesResponse } from "@/types/dashboard";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8080";
 
@@ -156,6 +156,32 @@ async function fetchRecentEvents(): Promise<EventsResponse> {
   }
 
   return response.json();
+}
+
+async function fetchRules(): Promise<RulesResponse> {
+  const response = await fetch(`${API_BASE}/rules`, {
+    cache: "no-store",
+    headers: getAuthHeaders(),
+  });
+
+  if (response.status === 401 || response.status === 403) {
+    await handleUnauthorized();
+    throw new Error("Unauthorized");
+  }
+
+  if (!response.ok) {
+    throw new Error(`Failed to load rules: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export function useRules() {
+  return useQuery({
+    queryKey: ["rules"],
+    queryFn: fetchRules,
+    staleTime: 30_000,
+  });
 }
 
 export function useRecentEvents(limit = 100) {

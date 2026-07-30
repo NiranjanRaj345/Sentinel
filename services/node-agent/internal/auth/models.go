@@ -37,6 +37,12 @@ func NewTokenStore(tokens []Token) *TokenStore {
 	return store
 }
 
+func (s *TokenStore) Empty() bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return len(s.tokens) == 0
+}
+
 func (s *TokenStore) Resolve(value string) (Token, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
