@@ -9,7 +9,7 @@ import (
 )
 
 type linuxProvider struct {
-	log  *logger.Logger
+	log    *logger.Logger
 	runner operations.CommandRunner
 }
 

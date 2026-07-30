@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { CapabilitiesResponse, DashboardOverview, HistoryResponse, OperationResult } from "@/types/dashboard";
+import type { ActivityEvent, CapabilitiesResponse, DashboardOverview, EventsResponse, HistoryResponse, OperationResult } from "@/types/dashboard";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8080";
 
@@ -137,5 +137,31 @@ export function useExecuteOperation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
+  });
+}
+
+async function fetchRecentEvents(): Promise<EventsResponse> {
+  const response = await fetch(`${API_BASE}/events/recent`, {
+    cache: "no-store",
+    headers: getAuthHeaders(),
+  });
+
+  if (response.status === 401 || response.status === 403) {
+    await handleUnauthorized();
+    throw new Error("Unauthorized");
+  }
+
+  if (!response.ok) {
+    throw new Error(`Failed to load events: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export function useRecentEvents(limit = 100) {
+  return useQuery({
+    queryKey: ["events", "recent", limit],
+    queryFn: fetchRecentEvents,
+    staleTime: 30_000,
   });
 }

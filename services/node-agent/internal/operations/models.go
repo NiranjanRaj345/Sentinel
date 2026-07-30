@@ -11,16 +11,16 @@ const (
 )
 
 type Request struct {
-	Action   Action `json:"action"`
-	Confirm  bool   `json:"confirm"`
+	Action  Action `json:"action"`
+	Confirm bool   `json:"confirm"`
 }
 
 type Result struct {
-	Action      Action        `json:"action"`
-	Success     bool          `json:"success"`
-	StartedAt   interface{}   `json:"startedAt"`
-	FinishedAt  interface{}   `json:"finishedAt"`
-	Message     string        `json:"message"`
+	Action     Action      `json:"action"`
+	Success    bool        `json:"success"`
+	StartedAt  interface{} `json:"startedAt"`
+	FinishedAt interface{} `json:"finishedAt"`
+	Message    string      `json:"message"`
 }
 
 type ValidationError struct {

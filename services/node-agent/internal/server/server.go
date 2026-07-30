@@ -6,6 +6,7 @@ import (
 
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/auth"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/dashboard"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/events"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/logger"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/node"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/operations"
@@ -27,6 +28,7 @@ type Server struct {
 	nodeService       *node.Service
 	operationsService *operations.Service
 	authStore         *auth.TokenStore
+	eventsService     *events.Service
 }
 
 func New(
@@ -41,6 +43,7 @@ func New(
 	nodeService *node.Service,
 	operationsService *operations.Service,
 	authStore *auth.TokenStore,
+	eventsService *events.Service,
 ) *Server {
 
 	server := &Server{
@@ -54,6 +57,7 @@ func New(
 		nodeService:       nodeService,
 		operationsService: operationsService,
 		authStore:         authStore,
+		eventsService:     eventsService,
 	}
 
 	mux := http.NewServeMux()

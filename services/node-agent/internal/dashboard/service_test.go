@@ -12,7 +12,7 @@ import (
 )
 
 func TestOverview_NoAlerts_ReturnsHealthy(t *testing.T) {
-	s := scheduler.New(5*time.Second, logger.New(logger.Info, io.Discard), nil, nil, nil)
+	s := scheduler.New(5*time.Second, logger.New(logger.Info, io.Discard), nil, nil, nil, nil)
 	_ = s.Start()
 	defer s.Stop()
 
@@ -34,7 +34,7 @@ func TestOverview_NoAlerts_ReturnsHealthy(t *testing.T) {
 }
 
 func TestOverview_WarningAlert_ReturnsWarning(t *testing.T) {
-	s := scheduler.New(5*time.Second, logger.New(logger.Info, io.Discard), nil, nil, nil)
+	s := scheduler.New(5*time.Second, logger.New(logger.Info, io.Discard), nil, nil, nil, nil)
 	_ = s.Start()
 	defer s.Stop()
 
@@ -64,7 +64,7 @@ func TestOverview_WarningAlert_ReturnsWarning(t *testing.T) {
 }
 
 func TestOverview_CriticalAlert_ReturnsCritical(t *testing.T) {
-	s := scheduler.New(5*time.Second, logger.New(logger.Info, io.Discard), nil, nil, nil)
+	s := scheduler.New(5*time.Second, logger.New(logger.Info, io.Discard), nil, nil, nil, nil)
 	_ = s.Start()
 	defer s.Stop()
 
@@ -94,7 +94,7 @@ func TestOverview_CriticalAlert_ReturnsCritical(t *testing.T) {
 }
 
 func TestOverview_MixedAlerts_PrefersCritical(t *testing.T) {
-	s := scheduler.New(5*time.Second, logger.New(logger.Info, io.Discard), nil, nil, nil)
+	s := scheduler.New(5*time.Second, logger.New(logger.Info, io.Discard), nil, nil, nil, nil)
 	_ = s.Start()
 	defer s.Stop()
 
@@ -133,7 +133,7 @@ func TestOverview_MixedAlerts_PrefersCritical(t *testing.T) {
 }
 
 func TestOverview_AlertsSortedByTriggerTime(t *testing.T) {
-	s := scheduler.New(5*time.Second, logger.New(logger.Info, io.Discard), nil, nil, nil)
+	s := scheduler.New(5*time.Second, logger.New(logger.Info, io.Discard), nil, nil, nil, nil)
 	_ = s.Start()
 	defer s.Stop()
 

@@ -11,6 +11,7 @@ import {
   Settings,
   PanelLeftClose,
   PanelLeftOpen,
+  ListTree,
 } from "lucide-react";
 import { useUIStore } from "@/stores/ui";
 
@@ -18,6 +19,7 @@ const navigation = [
   { name: "Overview", href: "/", icon: LayoutDashboard },
   { name: "Monitoring", href: "/monitoring", icon: Activity },
   { name: "History", href: "/history", icon: History },
+  { name: "Activity", href: "/activity", icon: ListTree },
   { name: "Alerts", href: "/alerts", icon: Bell },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
