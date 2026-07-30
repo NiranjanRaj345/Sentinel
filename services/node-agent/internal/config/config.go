@@ -17,6 +17,18 @@ type Config struct {
 	Metrics MetricsConfig `yaml:"metrics"`
 	Storage StorageConfig `yaml:"storage"`
 	Alerts  AlertsConfig  `yaml:"alerts"`
+	Auth    AuthConfig    `yaml:"auth"`
+}
+
+type AuthConfig struct {
+	Tokens []AuthTokenConfig `yaml:"tokens"`
+}
+
+type AuthTokenConfig struct {
+	Name        string     `yaml:"name"`
+	Value       string     `yaml:"value"`
+	Permissions []string   `yaml:"permissions"`
+	ExpiresAt   *time.Time `yaml:"expiresAt"`
 }
 
 type ServerConfig struct {
@@ -134,6 +146,10 @@ func (c Config) Validate() error {
 		return err
 	}
 
+	if err := c.Auth.Validate(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -192,6 +208,25 @@ func (c AlertsConfig) Validate() error {
 		}
 	}
 
+	return nil
+}
+
+func (c AuthConfig) Validate() error {
+	for _, token := range c.Tokens {
+		if token.Name == "" {
+			return fmt.Errorf("auth token name cannot be empty")
+		}
+		if token.Value == "" {
+			return fmt.Errorf("auth token value cannot be empty for token %q", token.Name)
+		}
+		for _, perm := range token.Permissions {
+			switch perm {
+			case "read", "operate", "configure":
+			default:
+				return fmt.Errorf("invalid permission %q for token %q", perm, token.Name)
+			}
+		}
+	}
 	return nil
 }
 
