@@ -33,6 +33,9 @@ func NewService(
 func (s *Service) Overview() Overview {
 	snapshot, _ := s.scheduler.Snapshot()
 	events := s.engine.ActiveEvents(snapshot)
+	if events == nil {
+		events = []alert.Event{}
+	}
 	stats := s.scheduler.Stats()
 
 	status := "healthy"
