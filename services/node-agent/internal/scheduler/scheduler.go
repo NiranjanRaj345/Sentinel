@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/alert"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/logger"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/metrics"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/storage/sqlite"
@@ -16,6 +17,7 @@ type Scheduler struct {
 	log      *logger.Logger
 	store    *sqlite.Store
 	hub      *stream.Hub
+	engine   *alert.Engine
 
 	latest  metrics.Info
 	lastErr error
@@ -47,12 +49,13 @@ func (s *Scheduler) Stats() Stats {
 	return s.stats
 }
 
-func New(interval time.Duration, log *logger.Logger, store *sqlite.Store, hub *stream.Hub) *Scheduler {
+func New(interval time.Duration, log *logger.Logger, store *sqlite.Store, hub *stream.Hub, engine *alert.Engine) *Scheduler {
 	return &Scheduler{
 		interval: interval,
 		log:      log,
 		store:    store,
 		hub:      hub,
+		engine:   engine,
 	}
 }
 
@@ -78,6 +81,10 @@ func (s *Scheduler) Start() error {
 		if err := s.store.Save(snapshot); err != nil {
 			s.log.Error("failed to save initial metrics snapshot: %v", err)
 		}
+	}
+
+	if s.engine != nil {
+		s.engine.Evaluate(snapshot)
 	}
 
 	if s.hub != nil {
@@ -140,6 +147,10 @@ func (s *Scheduler) collect() {
 		if err := s.store.Save(snapshot); err != nil {
 			s.log.Error("failed to save metrics snapshot: %v", err)
 		}
+	}
+
+	if s.engine != nil {
+		s.engine.Evaluate(snapshot)
 	}
 
 	if s.hub != nil {
