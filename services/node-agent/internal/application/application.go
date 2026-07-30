@@ -10,6 +10,8 @@ import (
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/config"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/dashboard"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/logger"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/node"
+	linuxprovider "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/node/providers/linux"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/scheduler"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/server"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/service"
@@ -29,6 +31,7 @@ type Application struct {
 	engine       *alert.Engine
 	dashboard    *dashboard.Service
 	dashboardHub *dashboard.Hub
+	nodeService  *node.Service
 }
 
 func New() (*Application, error) {
@@ -49,6 +52,7 @@ func New() (*Application, error) {
 	schedulerLog := log.Component("scheduler")
 
 	systemService := service.NewSystemService()
+	nodeService := node.NewService(linuxprovider.NewLinuxProvider(log.Component("node")), log.Component("node"))
 
 	interval, err := time.ParseDuration(cfg.Metrics.Interval)
 	if err != nil {
@@ -77,6 +81,7 @@ func New() (*Application, error) {
 		hub,
 		dashboardService,
 		dashboardHub,
+		nodeService,
 	)
 
 	return &Application{
@@ -89,6 +94,7 @@ func New() (*Application, error) {
 		engine:       engine,
 		dashboard:    dashboardService,
 		dashboardHub: dashboardHub,
+		nodeService:  nodeService,
 	}, nil
 }
 

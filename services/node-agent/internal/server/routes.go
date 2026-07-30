@@ -17,4 +17,5 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/dashboard/overview", dashboard.OverviewHandler(s.dashboard, s.log))
 	mux.HandleFunc("/dashboard/stream", dashboard.StreamHandler(s.dashboardHub, s.log))
 	mux.Handle("/dashboard/history", dashboard.NewHistoryHandler(s.store, s.log))
+	mux.HandleFunc("/dashboard/capabilities", handlers.Capabilities(s.nodeService))
 }

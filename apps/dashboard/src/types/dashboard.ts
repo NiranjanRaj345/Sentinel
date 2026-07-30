@@ -77,3 +77,14 @@ export type HistoryResponse = {
   period: string;
   points: HistoryPoint[];
 };
+
+export type CapabilityStatus = {
+  capability: string;
+  available: boolean;
+  state: string;
+  details?: string;
+};
+
+export type CapabilitiesResponse = {
+  capabilities: CapabilityStatus[];
+};

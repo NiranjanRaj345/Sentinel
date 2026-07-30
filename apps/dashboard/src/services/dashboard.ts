@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { DashboardOverview, HistoryResponse } from "@/types/dashboard";
+import type { CapabilitiesResponse, DashboardOverview, HistoryResponse } from "@/types/dashboard";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8080";
 
@@ -51,5 +51,28 @@ export function useDashboardHistory(period: string) {
     queryKey: ["dashboard", "history", period],
     queryFn: () => fetchHistory(period),
     enabled: Boolean(period),
+  });
+}
+
+async function fetchCapabilities(): Promise<CapabilitiesResponse> {
+  const response = await fetch(`${API_BASE}/dashboard/capabilities`, {
+    cache: "no-store",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to load capabilities: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export function useDashboardCapabilities() {
+  return useQuery({
+    queryKey: ["dashboard", "capabilities"],
+    queryFn: fetchCapabilities,
+    staleTime: 60_000,
   });
 }

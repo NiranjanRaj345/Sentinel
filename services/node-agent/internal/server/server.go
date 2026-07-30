@@ -6,6 +6,7 @@ import (
 
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/dashboard"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/logger"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/node"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/server/middleware"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/service"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/storage/sqlite"
@@ -21,6 +22,7 @@ type Server struct {
 	hub            *stream.Hub
 	dashboard      *dashboard.Service
 	dashboardHub   *dashboard.Hub
+	nodeService    *node.Service
 }
 
 func New(
@@ -32,6 +34,7 @@ func New(
 	hub *stream.Hub,
 	dashboard *dashboard.Service,
 	dashboardHub *dashboard.Hub,
+	nodeService *node.Service,
 ) *Server {
 
 	server := &Server{
@@ -42,6 +45,7 @@ func New(
 		hub:            hub,
 		dashboard:      dashboard,
 		dashboardHub:   dashboardHub,
+		nodeService:    nodeService,
 	}
 
 	mux := http.NewServeMux()
