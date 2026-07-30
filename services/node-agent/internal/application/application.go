@@ -58,7 +58,7 @@ func New() (*Application, error) {
 	}
 
 	hub := stream.New(log)
-	engine := alert.New(defaultRules(), schedulerLog)
+	engine := alert.New(cfg.Alerts.Rules, schedulerLog)
 	metricsScheduler := scheduler.New(interval, schedulerLog, store, hub, engine)
 	metricsService := service.NewMetricsService(metricsScheduler)
 
@@ -80,47 +80,6 @@ func New() (*Application, error) {
 		hub:       hub,
 		engine:    engine,
 	}, nil
-}
-
-func defaultRules() []alert.Rule {
-	return []alert.Rule{
-		{
-			ID:        "cpu-warning",
-			Name:      "CPU Usage",
-			Metric:    "cpu.usage",
-			Operator:  alert.GreaterThan,
-			Threshold: 80.0,
-			Severity:  alert.SeverityWarning,
-			Enabled:   true,
-		},
-		{
-			ID:        "cpu-critical",
-			Name:      "CPU Usage",
-			Metric:    "cpu.usage",
-			Operator:  alert.GreaterThanOrEqual,
-			Threshold: 90.0,
-			Severity:  alert.SeverityCritical,
-			Enabled:   true,
-		},
-		{
-			ID:        "memory-warning",
-			Name:      "Memory Usage",
-			Metric:    "memory.used_percent",
-			Operator:  alert.GreaterThan,
-			Threshold: 85.0,
-			Severity:  alert.SeverityWarning,
-			Enabled:   true,
-		},
-		{
-			ID:        "disk-critical",
-			Name:      "Disk Usage",
-			Metric:    "disk.used_percent",
-			Operator:  alert.GreaterThan,
-			Threshold: 95.0,
-			Severity:  alert.SeverityCritical,
-			Enabled:   true,
-		},
-	}
 }
 
 func (a *Application) Start() error {
