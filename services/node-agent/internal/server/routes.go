@@ -16,4 +16,5 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/stream", stream.StreamHandler(s.hub, s.log))
 	mux.HandleFunc("/dashboard/overview", dashboard.OverviewHandler(s.dashboard, s.log))
 	mux.HandleFunc("/dashboard/stream", dashboard.StreamHandler(s.dashboardHub, s.log))
+	mux.Handle("/dashboard/history", dashboard.NewHistoryHandler(s.store, s.log))
 }
