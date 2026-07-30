@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/alert"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/config"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/logger"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/scheduler"
@@ -24,6 +25,7 @@ type Application struct {
 	scheduler *scheduler.Scheduler
 	store     *sqlite.Store
 	hub       *stream.Hub
+	engine    *alert.Engine
 }
 
 func New() (*Application, error) {
@@ -56,7 +58,8 @@ func New() (*Application, error) {
 	}
 
 	hub := stream.New(log)
-	metricsScheduler := scheduler.New(interval, schedulerLog, store, hub)
+	engine := alert.New(defaultRules(), schedulerLog)
+	metricsScheduler := scheduler.New(interval, schedulerLog, store, hub, engine)
 	metricsService := service.NewMetricsService(metricsScheduler)
 
 	srv := server.New(
@@ -75,7 +78,49 @@ func New() (*Application, error) {
 		scheduler: metricsScheduler,
 		store:     store,
 		hub:       hub,
+		engine:    engine,
 	}, nil
+}
+
+func defaultRules() []alert.Rule {
+	return []alert.Rule{
+		{
+			ID:        "cpu-warning",
+			Name:      "CPU Usage",
+			Metric:    "cpu.usage",
+			Operator:  alert.GreaterThan,
+			Threshold: 80.0,
+			Severity:  alert.SeverityWarning,
+			Enabled:   true,
+		},
+		{
+			ID:        "cpu-critical",
+			Name:      "CPU Usage",
+			Metric:    "cpu.usage",
+			Operator:  alert.GreaterThanOrEqual,
+			Threshold: 90.0,
+			Severity:  alert.SeverityCritical,
+			Enabled:   true,
+		},
+		{
+			ID:        "memory-warning",
+			Name:      "Memory Usage",
+			Metric:    "memory.used_percent",
+			Operator:  alert.GreaterThan,
+			Threshold: 85.0,
+			Severity:  alert.SeverityWarning,
+			Enabled:   true,
+		},
+		{
+			ID:        "disk-critical",
+			Name:      "Disk Usage",
+			Metric:    "disk.used_percent",
+			Operator:  alert.GreaterThan,
+			Threshold: 95.0,
+			Severity:  alert.SeverityCritical,
+			Enabled:   true,
+		},
+	}
 }
 
 func (a *Application) Start() error {
