@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { DashboardOverview } from "@/types/dashboard";
+import type { DashboardOverview, HistoryResponse } from "@/types/dashboard";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8080";
 
@@ -25,5 +25,31 @@ export function useDashboardOverview(refreshMs = 2000) {
     refetchInterval: refreshMs,
     refetchIntervalInBackground: false,
     staleTime: 0,
+  });
+}
+
+async function fetchHistory(period: string): Promise<HistoryResponse> {
+  const response = await fetch(
+    `${API_BASE}/dashboard/history?period=${encodeURIComponent(period)}`,
+    {
+      cache: "no-store",
+      headers: {
+        Accept: "application/json",
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Failed to load history: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export function useDashboardHistory(period: string) {
+  return useQuery({
+    queryKey: ["dashboard", "history", period],
+    queryFn: () => fetchHistory(period),
+    enabled: Boolean(period),
   });
 }

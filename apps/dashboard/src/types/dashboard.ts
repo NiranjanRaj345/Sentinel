@@ -65,3 +65,15 @@ export type AlertSummary = {
   severity: "info" | "warning" | "critical";
   triggeredAt: string;
 };
+
+export type HistoryPoint = {
+  timestamp: string;
+  cpuUsage: number;
+  memoryUsage: number;
+  diskUsage: number;
+};
+
+export type HistoryResponse = {
+  period: string;
+  points: HistoryPoint[];
+};
