@@ -47,6 +47,7 @@ func New(
 
 	handler := middleware.Chain(
 		mux,
+		middleware.CORS,
 		middleware.Recovery(log),
 		middleware.RequestID,
 		middleware.Logging(log),
