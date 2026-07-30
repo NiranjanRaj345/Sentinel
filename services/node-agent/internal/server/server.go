@@ -7,6 +7,7 @@ import (
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/dashboard"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/logger"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/node"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/operations"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/server/middleware"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/service"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/storage/sqlite"
@@ -14,15 +15,16 @@ import (
 )
 
 type Server struct {
-	httpServer     *http.Server
-	log            *logger.Logger
-	systemService  *service.SystemService
-	metricsService *service.MetricsService
-	store          *sqlite.Store
-	hub            *stream.Hub
-	dashboard      *dashboard.Service
-	dashboardHub   *dashboard.Hub
-	nodeService    *node.Service
+	httpServer       *http.Server
+	log              *logger.Logger
+	systemService    *service.SystemService
+	metricsService   *service.MetricsService
+	store            *sqlite.Store
+	hub              *stream.Hub
+	dashboard        *dashboard.Service
+	dashboardHub     *dashboard.Hub
+	nodeService      *node.Service
+	operationsService *operations.Service
 }
 
 func New(
@@ -35,17 +37,19 @@ func New(
 	dashboard *dashboard.Service,
 	dashboardHub *dashboard.Hub,
 	nodeService *node.Service,
+	operationsService *operations.Service,
 ) *Server {
 
 	server := &Server{
-		log:            log,
-		systemService:  systemService,
-		metricsService: metricsService,
-		store:          store,
-		hub:            hub,
-		dashboard:      dashboard,
-		dashboardHub:   dashboardHub,
-		nodeService:    nodeService,
+		log:              log,
+		systemService:    systemService,
+		metricsService:   metricsService,
+		store:            store,
+		hub:              hub,
+		dashboard:        dashboard,
+		dashboardHub:     dashboardHub,
+		nodeService:      nodeService,
+		operationsService: operationsService,
 	}
 
 	mux := http.NewServeMux()

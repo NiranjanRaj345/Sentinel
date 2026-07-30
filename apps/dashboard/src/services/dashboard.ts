@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import type { CapabilitiesResponse, DashboardOverview, HistoryResponse } from "@/types/dashboard";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { CapabilitiesResponse, DashboardOverview, HistoryResponse, OperationResult } from "@/types/dashboard";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8080";
 
@@ -74,5 +74,36 @@ export function useDashboardCapabilities() {
     queryKey: ["dashboard", "capabilities"],
     queryFn: fetchCapabilities,
     staleTime: 60_000,
+  });
+}
+
+async function executeOperation(action: string, confirm: boolean): Promise<OperationResult> {
+  const response = await fetch(`${API_BASE}/operations`, {
+    method: "POST",
+    cache: "no-store",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ action, confirm }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Operation failed: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export function useExecuteOperation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ action, confirm }: { action: string; confirm: boolean }) =>
+      executeOperation(action, confirm),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    },
   });
 }

@@ -88,3 +88,11 @@ export type CapabilityStatus = {
 export type CapabilitiesResponse = {
   capabilities: CapabilityStatus[];
 };
+
+export type OperationResult = {
+  action: string;
+  success: boolean;
+  startedAt: string;
+  finishedAt: string;
+  message: string;
+};
