@@ -1,11 +1,13 @@
 package scheduler
 
 import (
+	"context"
 	"errors"
 	"sync"
 	"time"
 
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/alert"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/events"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/logger"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/metrics"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/storage/sqlite"
@@ -20,11 +22,13 @@ type Scheduler struct {
 	engine   *alert.Engine
 
 	publishDashboard func()
+	publishEvents    func(context.Context, events.Event) error
 
 	latest  metrics.Info
 	lastErr error
 
-	stats Stats
+	stats      Stats
+	prevAlerts map[string]alert.Event
 
 	mu     sync.RWMutex
 	ticker *time.Ticker
@@ -57,18 +61,53 @@ func New(
 	store *sqlite.Store,
 	hub *stream.Hub,
 	engine *alert.Engine,
+	publish func(context.Context, events.Event) error,
 ) *Scheduler {
 	return &Scheduler{
-		interval: interval,
-		log:      log,
-		store:    store,
-		hub:      hub,
-		engine:   engine,
+		interval:      interval,
+		log:           log,
+		store:         store,
+		hub:           hub,
+		engine:        engine,
+		publishEvents: publish,
+		prevAlerts:    make(map[string]alert.Event),
 	}
 }
 
 func (s *Scheduler) SetPublishDashboard(fn func()) {
 	s.publishDashboard = fn
+}
+
+func (s *Scheduler) emitSystemEvent(title, message string) {
+	if s.publishEvents == nil {
+		return
+	}
+	_ = s.publishEvents(context.Background(), events.SystemEvent(title, message))
+}
+
+func (s *Scheduler) emitAlertEvents(active []alert.Event) {
+	if s.publishEvents == nil {
+		return
+	}
+
+	current := make(map[string]alert.Event, len(active))
+	for _, e := range active {
+		current[e.RuleID] = e
+	}
+
+	for id, prev := range s.prevAlerts {
+		if _, ok := current[id]; !ok {
+			_ = s.publishEvents(context.Background(), events.AlertCleared(id, prev.RuleName))
+		}
+	}
+
+	for _, e := range active {
+		if _, ok := s.prevAlerts[e.RuleID]; !ok {
+			_ = s.publishEvents(context.Background(), events.AlertRaised(e.RuleID, e.RuleName, events.Severity(e.Severity), e.Value, e.Threshold))
+		}
+	}
+
+	s.prevAlerts = current
 }
 
 func (s *Scheduler) Start() error {
@@ -87,7 +126,10 @@ func (s *Scheduler) Start() error {
 	s.stats.LastCollectionDuration = duration
 	s.stats.SuccessfulCollections++
 	s.stats.LastError = ""
+	s.prevAlerts = make(map[string]alert.Event)
 	s.mu.Unlock()
+
+	s.emitSystemEvent("scheduler_started", "background scheduler started")
 
 	if s.store != nil {
 		if err := s.store.Save(snapshot); err != nil {
@@ -96,7 +138,10 @@ func (s *Scheduler) Start() error {
 	}
 
 	if s.engine != nil {
-		s.engine.Evaluate(snapshot)
+		active := s.engine.Evaluate(snapshot)
+		s.mu.Lock()
+		s.emitAlertEvents(active)
+		s.mu.Unlock()
 	}
 
 	if s.publishDashboard != nil {
@@ -166,7 +211,10 @@ func (s *Scheduler) collect() {
 	}
 
 	if s.engine != nil {
-		s.engine.Evaluate(snapshot)
+		active := s.engine.Evaluate(snapshot)
+		s.mu.Lock()
+		s.emitAlertEvents(active)
+		s.mu.Unlock()
 	}
 
 	if s.publishDashboard != nil {

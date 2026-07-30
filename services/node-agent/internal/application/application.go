@@ -10,11 +10,13 @@ import (
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/auth"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/config"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/dashboard"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/events"
+	eventSQLite "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/events/storage/sqlite"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/logger"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/node"
 	nodeprovider "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/node/providers/linux"
-	opprovider "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/operations/providers/linux"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/operations"
+	opprovider "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/operations/providers/linux"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/scheduler"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/server"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/service"
@@ -25,17 +27,18 @@ import (
 const ConfigPath = "config.yaml"
 
 type Application struct {
-	cfg              config.Config
-	logger           *logger.Logger
-	server           *server.Server
-	scheduler        *scheduler.Scheduler
-	store            *sqlite.Store
-	hub              *stream.Hub
-	engine           *alert.Engine
-	dashboard        *dashboard.Service
-	dashboardHub     *dashboard.Hub
-	nodeService      *node.Service
+	cfg               config.Config
+	logger            *logger.Logger
+	server            *server.Server
+	scheduler         *scheduler.Scheduler
+	store             *sqlite.Store
+	hub               *stream.Hub
+	engine            *alert.Engine
+	dashboard         *dashboard.Service
+	dashboardHub      *dashboard.Hub
+	nodeService       *node.Service
 	operationsService *operations.Service
+	eventsService     *events.Service
 }
 
 func New() (*Application, error) {
@@ -70,20 +73,37 @@ func New() (*Application, error) {
 	hub := stream.New(log)
 	engine := alert.New(cfg.Alerts.Rules, schedulerLog)
 	dashboardHub := dashboard.NewHub(log.Component("dashboard"))
-	metricsScheduler := scheduler.New(interval, schedulerLog, store, hub, engine)
-	metricsService := service.NewMetricsService(metricsScheduler)
-	dashboardService := dashboard.NewService(metricsScheduler, engine, cfg, dashboardHub)
-	metricsScheduler.SetPublishDashboard(dashboardService.PublishOverview)
 
 	nodeProvider := nodeprovider.NewLinuxProvider(log.Component("node"))
 	nodeService := node.NewService(nodeProvider, log.Component("node"))
 	operationsProvider := opprovider.NewLinuxProvider(log.Component("operations"), nil)
+
+	eventRepo, err := eventSQLite.OpenEvents(cfg.Storage.Path)
+	if err != nil {
+		return nil, fmt.Errorf("open events storage: %w", err)
+	}
+
+	eventsService := events.NewService(eventRepo, nil, log.Component("events"))
+
 	operationsService := operations.NewService(
 		operationsProvider,
 		operations.NewAuditor(log.Component("operations")),
 		operations.NewValidator(operationsProvider),
+		eventsService.Publish,
 		log.Component("operations"),
 	)
+
+	metricsScheduler := scheduler.New(
+		interval,
+		schedulerLog,
+		store,
+		hub,
+		engine,
+		eventsService.Publish,
+	)
+	metricsService := service.NewMetricsService(metricsScheduler)
+	dashboardService := dashboard.NewService(metricsScheduler, engine, cfg, dashboardHub)
+	metricsScheduler.SetPublishDashboard(dashboardService.PublishOverview)
 
 	authStore, err := auth.FromConfig(cfg.Auth)
 	if err != nil {
@@ -102,20 +122,22 @@ func New() (*Application, error) {
 		nodeService,
 		operationsService,
 		authStore,
+		eventsService,
 	)
 
 	return &Application{
-		cfg:              cfg,
-		logger:           appLog,
-		server:           srv,
-		scheduler:        metricsScheduler,
-		store:            store,
-		hub:              hub,
-		engine:           engine,
-		dashboard:        dashboardService,
-		dashboardHub:     dashboardHub,
-		nodeService:      nodeService,
+		cfg:               cfg,
+		logger:            appLog,
+		server:            srv,
+		scheduler:         metricsScheduler,
+		store:             store,
+		hub:               hub,
+		engine:            engine,
+		dashboard:         dashboardService,
+		dashboardHub:      dashboardHub,
+		nodeService:       nodeService,
 		operationsService: operationsService,
+		eventsService:     eventsService,
 	}, nil
 }
 

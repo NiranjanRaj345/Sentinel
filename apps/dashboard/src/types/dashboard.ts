@@ -96,3 +96,18 @@ export type OperationResult = {
   finishedAt: string;
   message: string;
 };
+
+export type ActivityEvent = {
+  id: string;
+  type: string;
+  severity: string;
+  source: string;
+  title: string;
+  message: string;
+  metadata?: Record<string, unknown>;
+  createdAt: string;
+};
+
+export type EventsResponse = {
+  events: ActivityEvent[];
+};

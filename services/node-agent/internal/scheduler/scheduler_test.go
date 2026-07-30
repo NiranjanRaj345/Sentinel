@@ -21,7 +21,7 @@ func openTempStore(t *testing.T) *sqlite.Store {
 }
 
 func TestScheduler_Snapshot_BeforeStart_ReturnsError(t *testing.T) {
-	s := New(5*time.Second, logger.New(logger.Info, io.Discard), nil, nil, nil)
+	s := New(5*time.Second, logger.New(logger.Info, io.Discard), nil, nil, nil, nil)
 
 	_, err := s.Snapshot()
 	if err == nil {
@@ -33,7 +33,7 @@ func TestScheduler_Start_InitialCollectionSucceeds(t *testing.T) {
 	store := openTempStore(t)
 	defer store.Close()
 
-	s := New(100*time.Millisecond, logger.New(logger.Info, io.Discard), store, nil, nil)
+	s := New(100*time.Millisecond, logger.New(logger.Info, io.Discard), store, nil, nil, nil)
 
 	err := s.Start()
 	if err != nil {
@@ -54,7 +54,7 @@ func TestScheduler_Snapshot_UpdatesOverTime(t *testing.T) {
 	store := openTempStore(t)
 	defer store.Close()
 
-	s := New(50*time.Millisecond, logger.New(logger.Info, io.Discard), store, nil, nil)
+	s := New(50*time.Millisecond, logger.New(logger.Info, io.Discard), store, nil, nil, nil)
 
 	if err := s.Start(); err != nil {
 		t.Fatalf("Start() failed: %v", err)
@@ -82,7 +82,7 @@ func TestScheduler_Snapshot_Concurrent(t *testing.T) {
 	store := openTempStore(t)
 	defer store.Close()
 
-	s := New(100*time.Millisecond, logger.New(logger.Info, io.Discard), store, nil, nil)
+	s := New(100*time.Millisecond, logger.New(logger.Info, io.Discard), store, nil, nil, nil)
 
 	if err := s.Start(); err != nil {
 		t.Fatalf("Start() failed: %v", err)
@@ -115,7 +115,7 @@ func TestScheduler_Stop_TerminatesGoroutine(t *testing.T) {
 	store := openTempStore(t)
 	defer store.Close()
 
-	s := New(100*time.Millisecond, logger.New(logger.Info, io.Discard), store, nil, nil)
+	s := New(100*time.Millisecond, logger.New(logger.Info, io.Discard), store, nil, nil, nil)
 
 	if err := s.Start(); err != nil {
 		t.Fatalf("Start() failed: %v", err)
@@ -135,7 +135,7 @@ func TestScheduler_Stats_PopulatedAfterStart(t *testing.T) {
 	store := openTempStore(t)
 	defer store.Close()
 
-	s := New(100*time.Millisecond, logger.New(logger.Info, io.Discard), store, nil, nil)
+	s := New(100*time.Millisecond, logger.New(logger.Info, io.Discard), store, nil, nil, nil)
 
 	if err := s.Start(); err != nil {
 		t.Fatalf("Start() failed: %v", err)
@@ -164,7 +164,7 @@ func TestScheduler_Stats_SuccessfulCollection_IncrementsCounter(t *testing.T) {
 	store := openTempStore(t)
 	defer store.Close()
 
-	s := New(50*time.Millisecond, logger.New(logger.Info, io.Discard), store, nil, nil)
+	s := New(50*time.Millisecond, logger.New(logger.Info, io.Discard), store, nil, nil, nil)
 
 	if err := s.Start(); err != nil {
 		t.Fatalf("Start() failed: %v", err)
@@ -186,7 +186,7 @@ func TestScheduler_Stats_ConcurrentAccess(t *testing.T) {
 	store := openTempStore(t)
 	defer store.Close()
 
-	s := New(100*time.Millisecond, logger.New(logger.Info, io.Discard), store, nil, nil)
+	s := New(100*time.Millisecond, logger.New(logger.Info, io.Discard), store, nil, nil, nil)
 
 	if err := s.Start(); err != nil {
 		t.Fatalf("Start() failed: %v", err)

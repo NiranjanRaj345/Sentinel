@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/events"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/logger"
 )
 
@@ -12,9 +13,10 @@ type Service struct {
 	auditor   Auditor
 	validator Validator
 	log       *logger.Logger
+	publish   func(context.Context, events.Event) error
 }
 
-func NewService(provider Provider, auditor Auditor, validator Validator, log *logger.Logger) *Service {
+func NewService(provider Provider, auditor Auditor, validator Validator, publish func(context.Context, events.Event) error, log *logger.Logger) *Service {
 	if provider == nil {
 		provider = noopProvider{}
 	}
@@ -28,7 +30,8 @@ func NewService(provider Provider, auditor Auditor, validator Validator, log *lo
 		provider:  provider,
 		auditor:   auditor,
 		validator: validator,
-		log:      log,
+		publish:   publish,
+		log:       log,
 	}
 }
 
@@ -43,6 +46,15 @@ func (s *Service) Execute(ctx context.Context, req Request) (Result, error) {
 	}
 
 	s.auditor.Record(result)
+
+	if s.publish != nil {
+		event := events.OperationFailure(string(req.Action), result.Message)
+		if result.Success {
+			event = events.OperationSuccess(string(req.Action), result.Message)
+		}
+		_ = s.publish(ctx, event)
+	}
+
 	return result, nil
 }
 

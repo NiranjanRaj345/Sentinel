@@ -300,7 +300,7 @@ export function OverviewPage() {
                     {alert.ruleName}
                   </p>
                   <p className="text-xs text-slate-400">
-                    {alert.value.toFixed(1)} {alert.metric}
+                    {alert.value != null ? `${alert.value.toFixed(1)} ${alert.metric}` : alert.metric}
                   </p>
                 </div>
                 <span
