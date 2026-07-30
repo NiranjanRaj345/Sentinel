@@ -18,6 +18,14 @@ func New(rules []Rule, log *logger.Logger) *Engine {
 }
 
 func (e *Engine) Evaluate(info metrics.Info) []Event {
+	return e.evaluate(info, true)
+}
+
+func (e *Engine) ActiveEvents(info metrics.Info) []Event {
+	return e.evaluate(info, false)
+}
+
+func (e *Engine) evaluate(info metrics.Info, logEnabled bool) []Event {
 	var events []Event
 
 	for _, rule := range e.rules {
@@ -46,14 +54,16 @@ func (e *Engine) Evaluate(info metrics.Info) []Event {
 
 		events = append(events, event)
 
-		e.log.Info(
-			"%s %s (%.1f %s %.1f)",
-			severityLabel(rule.Severity),
-			rule.Name,
-			value,
-			rule.Operator,
-			rule.Threshold,
-		)
+		if logEnabled {
+			e.log.Info(
+				"%s %s (%.1f %s %.1f)",
+				severityLabel(rule.Severity),
+				rule.Name,
+				value,
+				rule.Operator,
+				rule.Threshold,
+			)
+		}
 	}
 
 	return events

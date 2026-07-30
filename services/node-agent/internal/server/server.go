@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/dashboard"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/logger"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/server/middleware"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/service"
@@ -18,6 +19,7 @@ type Server struct {
 	metricsService *service.MetricsService
 	store          *sqlite.Store
 	hub            *stream.Hub
+	dashboard      *dashboard.Service
 }
 
 func New(
@@ -27,6 +29,7 @@ func New(
 	metricsService *service.MetricsService,
 	store *sqlite.Store,
 	hub *stream.Hub,
+	dashboard *dashboard.Service,
 ) *Server {
 
 	server := &Server{
@@ -35,6 +38,7 @@ func New(
 		metricsService: metricsService,
 		store:          store,
 		hub:            hub,
+		dashboard:      dashboard,
 	}
 
 	mux := http.NewServeMux()

@@ -8,6 +8,7 @@ import (
 
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/alert"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/config"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/dashboard"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/logger"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/scheduler"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/server"
@@ -26,6 +27,7 @@ type Application struct {
 	store     *sqlite.Store
 	hub       *stream.Hub
 	engine    *alert.Engine
+	dashboard *dashboard.Service
 }
 
 func New() (*Application, error) {
@@ -61,6 +63,7 @@ func New() (*Application, error) {
 	engine := alert.New(cfg.Alerts.Rules, schedulerLog)
 	metricsScheduler := scheduler.New(interval, schedulerLog, store, hub, engine)
 	metricsService := service.NewMetricsService(metricsScheduler)
+	dashboardService := dashboard.NewService(metricsScheduler, engine, cfg)
 
 	srv := server.New(
 		cfg.Server.Address(),
@@ -69,6 +72,7 @@ func New() (*Application, error) {
 		metricsService,
 		store,
 		hub,
+		dashboardService,
 	)
 
 	return &Application{
@@ -79,6 +83,7 @@ func New() (*Application, error) {
 		store:     store,
 		hub:       hub,
 		engine:    engine,
+		dashboard: dashboardService,
 	}, nil
 }
 
