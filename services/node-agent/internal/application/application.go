@@ -11,7 +11,9 @@ import (
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/dashboard"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/logger"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/node"
-	linuxprovider "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/node/providers/linux"
+	nodeprovider "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/node/providers/linux"
+	opprovider "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/operations/providers/linux"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/operations"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/scheduler"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/server"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/service"
@@ -22,16 +24,17 @@ import (
 const ConfigPath = "config.yaml"
 
 type Application struct {
-	cfg          config.Config
-	logger       *logger.Logger
-	server       *server.Server
-	scheduler    *scheduler.Scheduler
-	store        *sqlite.Store
-	hub          *stream.Hub
-	engine       *alert.Engine
-	dashboard    *dashboard.Service
-	dashboardHub *dashboard.Hub
-	nodeService  *node.Service
+	cfg              config.Config
+	logger           *logger.Logger
+	server           *server.Server
+	scheduler        *scheduler.Scheduler
+	store            *sqlite.Store
+	hub              *stream.Hub
+	engine           *alert.Engine
+	dashboard        *dashboard.Service
+	dashboardHub     *dashboard.Hub
+	nodeService      *node.Service
+	operationsService *operations.Service
 }
 
 func New() (*Application, error) {
@@ -52,7 +55,14 @@ func New() (*Application, error) {
 	schedulerLog := log.Component("scheduler")
 
 	systemService := service.NewSystemService()
-	nodeService := node.NewService(linuxprovider.NewLinuxProvider(log.Component("node")), log.Component("node"))
+	nodeService := node.NewService(nodeprovider.NewLinuxProvider(log.Component("node")), log.Component("node"))
+	operationsProvider := opprovider.NewLinuxProvider(log.Component("operations"), nil)
+	operationsService := operations.NewService(
+		operationsProvider,
+		operations.NewAuditor(log.Component("operations")),
+		operations.NewValidator(operationsProvider),
+		log.Component("operations"),
+	)
 
 	interval, err := time.ParseDuration(cfg.Metrics.Interval)
 	if err != nil {
@@ -82,19 +92,21 @@ func New() (*Application, error) {
 		dashboardService,
 		dashboardHub,
 		nodeService,
+		operationsService,
 	)
 
 	return &Application{
-		cfg:          cfg,
-		logger:       appLog,
-		server:       srv,
-		scheduler:    metricsScheduler,
-		store:        store,
-		hub:          hub,
-		engine:       engine,
-		dashboard:    dashboardService,
-		dashboardHub: dashboardHub,
-		nodeService:  nodeService,
+		cfg:              cfg,
+		logger:           appLog,
+		server:           srv,
+		scheduler:        metricsScheduler,
+		store:            store,
+		hub:              hub,
+		engine:           engine,
+		dashboard:        dashboardService,
+		dashboardHub:     dashboardHub,
+		nodeService:      nodeService,
+		operationsService: operationsService,
 	}, nil
 }
 

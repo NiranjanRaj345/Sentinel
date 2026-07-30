@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/dashboard"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/operations"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/server/handlers"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/stream"
 )
@@ -18,4 +19,5 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/dashboard/stream", dashboard.StreamHandler(s.dashboardHub, s.log))
 	mux.Handle("/dashboard/history", dashboard.NewHistoryHandler(s.store, s.log))
 	mux.HandleFunc("/dashboard/capabilities", handlers.Capabilities(s.nodeService))
+	mux.HandleFunc("/operations", operations.NewHandler(s.operationsService, s.log).ServeHTTP)
 }

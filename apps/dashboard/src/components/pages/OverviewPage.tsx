@@ -1,13 +1,14 @@
 "use client";
 
 import React from "react";
-import { useDashboardOverview, useDashboardCapabilities } from "@/services/dashboard";
+import { useDashboardOverview, useDashboardCapabilities, useExecuteOperation } from "@/services/dashboard";
 import { useDashboardSocket, ConnectionStatus } from "@/hooks/useDashboardSocket";
 import { Card } from "@/components/ui/Card";
 import { clsx } from "clsx";
 import type { CapabilityStatus, DashboardOverview, DashboardStatus } from "@/types/dashboard";
 import { MetricCard } from "@/components/pages/MetricCard";
-import { Wifi, WifiOff, RefreshCw } from "lucide-react";
+import { Wifi, WifiOff, RefreshCw, Power, RotateCw, Moon } from "lucide-react";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 const statusConfig: Record<
   DashboardStatus,
@@ -67,6 +68,23 @@ export function OverviewPage() {
   const { data, isLoading, isError } = useDashboardOverview();
   const { status } = useDashboardSocket();
   const { data: capabilities } = useDashboardCapabilities();
+  const executeMutation = useExecuteOperation();
+
+  const [toast, setToast] = React.useState<string | null>(null);
+
+  const showToast = (message: string) => {
+    setToast(message);
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  const handleExecute = async (action: string) => {
+    try {
+      const result = await executeMutation.mutateAsync({ action, confirm: true });
+      showToast(`${action}: ${result.message}`);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Operation failed");
+    }
+  };
 
   if (isLoading) {
     return (
@@ -128,6 +146,11 @@ export function OverviewPage() {
 
   return (
     <div className="space-y-6">
+      {toast && (
+        <div className="fixed right-4 top-4 z-50 rounded-lg border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white shadow-xl">
+          {toast}
+        </div>
+      )}
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold text-white">Overview</h1>
         <p className="text-sm text-slate-400">
@@ -197,6 +220,35 @@ export function OverviewPage() {
           description="Last known throughput"
         />
       </div>
+
+      <Card title="Quick Actions" description="Certified remote operations. Each requires confirmation.">
+        <div className="flex flex-wrap gap-3">
+          <QuickActionButton
+            label="Restart"
+            icon={<RotateCw className="h-4 w-4" />}
+            action="restart"
+            description="Reboot this node"
+            onExecute={handleExecute}
+            loading={executeMutation.isPending}
+          />
+          <QuickActionButton
+            label="Shutdown"
+            icon={<Power className="h-4 w-4" />}
+            action="shutdown"
+            description="Power off this node"
+            onExecute={handleExecute}
+            loading={executeMutation.isPending}
+          />
+          <QuickActionButton
+            label="Sleep"
+            icon={<Moon className="h-4 w-4" />}
+            action="sleep"
+            description="Suspend this node"
+            onExecute={handleExecute}
+            loading={executeMutation.isPending}
+          />
+        </div>
+      </Card>
 
       <Card title="Capabilities" description="What this node can currently do.">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -269,5 +321,44 @@ export function OverviewPage() {
         )}
       </Card>
     </div>
+  );
+}
+
+function QuickActionButton({
+  label,
+  icon,
+  action,
+  description,
+  onExecute,
+  loading = false,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  action: string;
+  description: string;
+  onExecute: (action: string) => void;
+  loading?: boolean;
+}) {
+  const [open, setOpen] = React.useState(false);
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white hover:bg-white/10"
+      >
+        {icon}
+        {label}
+      </button>
+      <ConfirmDialog
+        open={open}
+        title={`Confirm ${label}`}
+        description={description}
+        confirmLabel={label}
+        onConfirm={() => onExecute(action)}
+        onCancel={() => setOpen(false)}
+        loading={loading}
+      />
+    </>
   );
 }
