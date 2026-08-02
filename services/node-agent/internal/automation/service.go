@@ -43,3 +43,10 @@ func (s *Service) Dispatch(ctx context.Context, match rules.Match) error {
 	}
 	return nil
 }
+
+func (s *Service) Close() error {
+	if s == nil || s.repo == nil {
+		return nil
+	}
+	return s.repo.Close()
+}

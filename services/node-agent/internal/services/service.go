@@ -44,6 +44,13 @@ func (s *Service) Execute(ctx context.Context, action Action, name string) (Serv
 	return result, nil
 }
 
+func (s *Service) Close() error {
+	if s == nil || s.repo == nil {
+		return nil
+	}
+	return s.repo.Close()
+}
+
 type noopProvider struct{}
 
 func (noopProvider) List(ctx context.Context) ([]ServiceItem, error) { return nil, nil }

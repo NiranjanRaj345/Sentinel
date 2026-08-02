@@ -244,5 +244,21 @@ func (a *Application) Shutdown(ctx context.Context) error {
 		a.logger.Error("failed to close events storage: %v", err)
 	}
 
+	if err := a.rulesService.Close(); err != nil {
+		a.logger.Error("failed to close rules storage: %v", err)
+	}
+
+	if err := a.servicesService.Close(); err != nil {
+		a.logger.Error("failed to close services storage: %v", err)
+	}
+
+	if err := a.resourcesService.Close(); err != nil {
+		a.logger.Error("failed to close resources storage: %v", err)
+	}
+
+	if err := a.automationService.Close(); err != nil {
+		a.logger.Error("failed to close automation storage: %v", err)
+	}
+
 	return a.server.Shutdown(ctx)
 }

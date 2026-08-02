@@ -65,6 +65,13 @@ func (s *Service) Execute(ctx context.Context, action ResourceAction, name strin
 	return result, nil
 }
 
+func (s *Service) Close() error {
+	if s == nil || s.repo == nil {
+		return nil
+	}
+	return s.repo.Close()
+}
+
 func (s *Service) emitHealthChangeIfNeeded(resource Resource) {
 	if s.publish == nil {
 		return

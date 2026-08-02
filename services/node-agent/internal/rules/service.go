@@ -51,6 +51,13 @@ func (s *Service) Evaluate(ctx context.Context, event Event) []Match {
 	return matches
 }
 
+func (s *Service) Close() error {
+	if s == nil || s.repo == nil {
+		return nil
+	}
+	return s.repo.Close()
+}
+
 func SeedRules() []Rule {
 	return []Rule{
 		{

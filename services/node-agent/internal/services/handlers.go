@@ -44,7 +44,9 @@ func (h *Handler) list(w http.ResponseWriter, r *http.Request) {
 		items = []ServiceItem{}
 	}
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(items)
+	_ = json.NewEncoder(w).Encode(struct {
+		Services []ServiceItem `json:"services"`
+	}{Services: items})
 }
 
 func (h *Handler) execute(w http.ResponseWriter, r *http.Request) {

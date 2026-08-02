@@ -37,5 +37,7 @@ func (h *Handler) list(w http.ResponseWriter, r *http.Request) {
 		records = []ExecutionRecord{}
 	}
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(records)
+	_ = json.NewEncoder(w).Encode(struct {
+		Executions []ExecutionRecord `json:"executions"`
+	}{Executions: records})
 }

@@ -37,5 +37,7 @@ func (h *Handler) list(w http.ResponseWriter, r *http.Request) {
 		resources = []Resource{}
 	}
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(resources)
+	_ = json.NewEncoder(w).Encode(struct {
+		Resources []Resource `json:"resources"`
+	}{Resources: resources})
 }
