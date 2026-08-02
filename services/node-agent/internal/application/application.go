@@ -35,6 +35,7 @@ import (
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/stream"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/automation"
 	automationSQLite "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/automation/storage/sqlite"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/guardian"
 )
 
 const ConfigPath = "config.yaml"
@@ -56,6 +57,7 @@ type Application struct {
 	servicesService   *services.Service
 	resourcesService  *resources.Service
 	automationService *automation.Service
+	guardianService   *guardian.Service
 }
 
 func New() (*Application, error) {
@@ -133,8 +135,10 @@ func New() (*Application, error) {
 		return nil, fmt.Errorf("open automation storage: %w", err)
 	}
 
-	automationEngine := automation.NewEngine(operationsService, eventsService.Publish, log.Component("automation"))
-	automationService := automation.NewService(automationEngine, automationRepo, log.Component("automation"))
+	guardianService := guardian.NewService(nil, eventsService.Publish, log.Component("guardian"))
+
+	automationEngine := automation.NewEngine(operationsService, guardianService, eventsService.Publish, log.Component("automation"))
+	automationService := automation.NewService(automationEngine, automationRepo, guardianService, log.Component("automation"))
 
 	rulesService := rules.NewService(rulesRepo, automationEngine, nil, log.Component("rules"))
 
@@ -179,6 +183,7 @@ func New() (*Application, error) {
 		servicesService,
 		resourcesService,
 		automationService,
+		guardianService,
 	)
 
 	return &Application{
@@ -198,6 +203,7 @@ func New() (*Application, error) {
 		servicesService:   servicesService,
 		resourcesService:  resourcesService,
 		automationService: automationService,
+		guardianService:   guardianService,
 	}, nil
 }
 

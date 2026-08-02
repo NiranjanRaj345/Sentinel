@@ -25,6 +25,7 @@ const (
 	SourceAlert      Source = "alert"
 	SourceScheduler  Source = "scheduler"
 	SourceResources  Source = "resources"
+	SourceGuardian   Source = "guardian"
 )
 
 type Event struct {
@@ -114,5 +115,16 @@ func ResourceHealthChanged(name string, health string, message string) Event {
 		Title:    "Resource health changed: " + name,
 		Message:  message,
 		Metadata: map[string]interface{}{"resource": name, "health": health},
+	}
+}
+
+func GuardianEvent(title, message string) Event {
+	return Event{
+		Type:     EventTypeSystem,
+		Severity: SeverityInfo,
+		Source:   SourceGuardian,
+		Title:    title,
+		Message:  message,
+		Metadata: map[string]interface{}{},
 	}
 }

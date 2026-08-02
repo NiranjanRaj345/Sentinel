@@ -171,3 +171,17 @@ export type AutomationExecution = {
 export type AutomationExecutionsResponse = {
   executions: AutomationExecution[];
 };
+
+export type GuardianStatus = {
+  status: "online" | "offline";
+  firmware: string;
+  uptime: number;
+  powerButton: boolean;
+  resetButton: boolean;
+  powerLed: boolean;
+  lastSeen: string;
+};
+
+export type GuardianActionResponse = {
+  result: string;
+};

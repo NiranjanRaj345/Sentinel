@@ -25,6 +25,8 @@ type Action string
 const (
 	ActionNotify   Action = "notify"
 	ActionExecute  Action = "execute"
+	ActionPower    Action = "guardian_power"
+	ActionReset    Action = "guardian_reset"
 )
 
 type Rule struct {

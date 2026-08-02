@@ -1,5 +1,22 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { ActivityEvent, AutomationExecution, AutomationExecutionsResponse, CapabilitiesResponse, DashboardOverview, EventsResponse, HistoryResponse, OperationResult, Rule, RulesResponse, Resource, ResourcesResponse, ServiceItem, ServicesResponse } from "@/types/dashboard";
+import type {
+  ActivityEvent,
+  AutomationExecution,
+  AutomationExecutionsResponse,
+  CapabilitiesResponse,
+  DashboardOverview,
+  EventsResponse,
+  HistoryResponse,
+  OperationResult,
+  Rule,
+  RulesResponse,
+  Resource,
+  ResourcesResponse,
+  ServiceItem,
+  ServicesResponse,
+  GuardianStatus,
+  GuardianActionResponse,
+} from "@/types/dashboard";
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8080").replace(/\/$/, "");
 
@@ -198,5 +215,71 @@ export function useRecentEvents(limit = 100) {
     queryKey: ["events", "recent", limit],
     queryFn: fetchRecentEvents,
     staleTime: 30_000,
+  });
+}
+
+async function fetchGuardianStatus(): Promise<GuardianStatus> {
+  return fetchJSON("guardian status", `${API_BASE}/guardian/status`);
+}
+
+export function useGuardianStatus(refreshMs = 5000) {
+  return useQuery({
+    queryKey: ["guardian", "status"],
+    queryFn: fetchGuardianStatus,
+    refetchInterval: refreshMs,
+    refetchIntervalInBackground: false,
+    staleTime: 0,
+  });
+}
+
+async function sendGuardianPower(action: "press" | "release"): Promise<GuardianActionResponse> {
+  const response = await fetch(`${API_BASE}/guardian/power`, {
+    method: "POST",
+    cache: "no-store",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ action }),
+  });
+
+  if (!response.ok) {
+    await handleResponseError("guardian power", response);
+  }
+
+  return response.json() as Promise<GuardianActionResponse>;
+}
+
+export function useGuardianPower() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (action: "press" | "release") => sendGuardianPower(action),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["guardian", "status"] });
+    },
+  });
+}
+
+async function sendGuardianReset(action: "press" | "release"): Promise<GuardianActionResponse> {
+  const response = await fetch(`${API_BASE}/guardian/reset`, {
+    method: "POST",
+    cache: "no-store",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ action }),
+  });
+
+  if (!response.ok) {
+    await handleResponseError("guardian reset", response);
+  }
+
+  return response.json() as Promise<GuardianActionResponse>;
+}
+
+export function useGuardianReset() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (action: "press" | "release") => sendGuardianReset(action),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["guardian", "status"] });
+    },
   });
 }
