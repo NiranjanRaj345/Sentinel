@@ -9,6 +9,8 @@ import (
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/operations"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/rules"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/server/handlers"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/services"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/resources"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/stream"
 )
 
@@ -28,6 +30,8 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.Handle("/rules", s.authRead(rules.NewHandler(s.rulesService)))
 
 	mux.Handle("/operations", s.authOperate(operations.NewHandler(s.operationsService, s.log)))
+	mux.Handle("/services", s.authOperate(services.NewHandler(s.servicesService, s.log)))
+	mux.Handle("/resources", s.authRead(resources.NewHandler(s.resourcesService, s.log)))
 }
 
 func (s *Server) authRead(next http.Handler) http.Handler {

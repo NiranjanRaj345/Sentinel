@@ -22,6 +22,12 @@ import (
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/scheduler"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/server"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/service"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/services"
+	serviceslinux "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/services/providers/linux"
+	servicesSQLite "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/services/storage/sqlite"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/resources"
+	resourceslinux "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/resources/providers/linux"
+	resourcesSQLite "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/resources/storage/sqlite"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/storage/sqlite"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/stream"
 )
@@ -42,6 +48,8 @@ type Application struct {
 	operationsService *operations.Service
 	eventsService     *events.Service
 	rulesService      *rules.Service
+	servicesService   *services.Service
+	resourcesService  *resources.Service
 }
 
 func New() (*Application, error) {
@@ -99,7 +107,21 @@ func New() (*Application, error) {
 		}
 	}
 
+	servicesRepo, err := servicesSQLite.Open(cfg.Storage.Path)
+	if err != nil {
+		return nil, fmt.Errorf("open services storage: %w", err)
+	}
+
+	servicesService := services.NewService(serviceslinux.NewLinuxProvider(log.Component("services")), servicesRepo, log.Component("services"))
+
 	eventsService := events.NewService(eventRepo, nil, log.Component("events"))
+
+	resourcesRepo, err := resourcesSQLite.Open(cfg.Storage.Path)
+	if err != nil {
+		return nil, fmt.Errorf("open resources storage: %w", err)
+	}
+
+	resourcesService := resources.NewService(resourceslinux.NewLinuxProvider(log.Component("resources")), resourcesRepo, eventsService.Publish, log.Component("resources"))
 
 	operationsService := operations.NewService(
 		operationsProvider,
@@ -140,6 +162,8 @@ func New() (*Application, error) {
 		authStore,
 		eventsService,
 		rulesService,
+		servicesService,
+		resourcesService,
 	)
 
 	return &Application{
@@ -156,6 +180,8 @@ func New() (*Application, error) {
 		operationsService: operationsService,
 		eventsService:     eventsService,
 		rulesService:      rulesService,
+		servicesService:   servicesService,
+		resourcesService:  resourcesService,
 	}, nil
 }
 

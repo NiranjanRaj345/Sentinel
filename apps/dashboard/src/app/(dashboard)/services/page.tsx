@@ -3,6 +3,7 @@
 import React from "react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { useServices } from "@/services/dashboard";
+import type { ServiceItem } from "@/types/dashboard";
 
 const STATUS_COLORS: Record<string, string> = {
   running: "bg-emerald-500/10 text-emerald-300",
@@ -14,7 +15,7 @@ const STATUS_COLORS: Record<string, string> = {
 export default function ServicesRoute() {
   const { servicesQuery, actionMutation } = useServices();
   const { data, isLoading, isError } = servicesQuery;
-  const services = data?.services ?? [];
+  const services = (data?.services ?? []) as ServiceItem[];
 
   const runAction = (name: string, action: string) => {
     actionMutation.mutate({ action, name });
@@ -43,7 +44,7 @@ export default function ServicesRoute() {
         )}
 
         <div className="space-y-3">
-          {services.map((svc) => (
+          {services.map((svc: ServiceItem) => (
             <div
               key={svc.name}
               className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-4 py-3"

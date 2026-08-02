@@ -24,6 +24,7 @@ const (
 	SourceOperations Source = "operations"
 	SourceAlert      Source = "alert"
 	SourceScheduler  Source = "scheduler"
+	SourceResources  Source = "resources"
 )
 
 type Event struct {
@@ -95,5 +96,23 @@ func SystemEvent(title, message string) Event {
 		Title:    title,
 		Message:  message,
 		Metadata: map[string]interface{}{},
+	}
+}
+
+func ResourceHealthChanged(name string, health string, message string) Event {
+	severity := SeverityInfo
+	if health == "unavailable" {
+		severity = SeverityCritical
+	} else if health == "degraded" {
+		severity = SeverityWarning
+	}
+
+	return Event{
+		Type:     EventTypeSystem,
+		Severity: severity,
+		Source:   SourceResources,
+		Title:    "Resource health changed: " + name,
+		Message:  message,
+		Metadata: map[string]interface{}{"resource": name, "health": health},
 	}
 }

@@ -13,6 +13,8 @@ import (
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/rules"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/server/middleware"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/service"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/services"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/resources"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/storage/sqlite"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/stream"
 )
@@ -31,6 +33,8 @@ type Server struct {
 	authStore         *auth.TokenStore
 	eventsService     *events.Service
 	rulesService      *rules.Service
+	servicesService   *services.Service
+	resourcesService  *resources.Service
 }
 
 func New(
@@ -47,6 +51,8 @@ func New(
 	authStore *auth.TokenStore,
 	eventsService *events.Service,
 	rulesService *rules.Service,
+	servicesService *services.Service,
+	resourcesService *resources.Service,
 ) *Server {
 
 	server := &Server{
@@ -62,6 +68,8 @@ func New(
 		authStore:         authStore,
 		eventsService:     eventsService,
 		rulesService:      rulesService,
+		servicesService:   servicesService,
+		resourcesService:  resourcesService,
 	}
 
 	mux := http.NewServeMux()

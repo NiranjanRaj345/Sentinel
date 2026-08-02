@@ -130,3 +130,30 @@ export type Rule = {
 export type RulesResponse = {
   rules: Rule[];
 };
+
+export type ResourceType = "remote_desktop" | "vpn" | "container_runtime" | "media_server" | "database" | "monitoring" | "application";
+
+export type ResourceHealth = "healthy" | "degraded" | "unavailable" | "unknown";
+
+export type Resource = {
+  name: string;
+  type: ResourceType;
+  health: ResourceHealth;
+  status: string;
+  message?: string;
+};
+
+export type ResourcesResponse = {
+  resources: Resource[];
+};
+
+export type ServiceItem = {
+  name: string;
+  status: string;
+  action?: string;
+  message?: string;
+};
+
+export type ServicesResponse = {
+  services: ServiceItem[];
+};
