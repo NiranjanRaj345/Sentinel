@@ -54,3 +54,13 @@ coverage/
 
 services/node-agent/sentinel.db
 *.db
+
+# SQLite
+*.db
+*.db-shm
+*.db-wal
+
+# Sentinel database
+services/node-agent/sentinel.db
+services/node-agent/sentinel.db-shm
+services/node-agent/sentinel.db-wal
