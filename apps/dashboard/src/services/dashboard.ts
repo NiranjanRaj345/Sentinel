@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ActivityEvent, AutomationExecution, AutomationExecutionsResponse, CapabilitiesResponse, DashboardOverview, EventsResponse, HistoryResponse, OperationResult, Rule, RulesResponse, Resource, ResourcesResponse, ServiceItem, ServicesResponse } from "@/types/dashboard";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8080";
+const API_BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8080").replace(/\/$/, "");
 
 function getAuthHeaders(): HeadersInit {
   const headers: HeadersInit = {
@@ -24,22 +24,39 @@ async function handleUnauthorized() {
   }
 }
 
-async function fetchOverview(): Promise<DashboardOverview> {
-  const response = await fetch(`${API_BASE}/dashboard/overview`, {
+async function handleResponseError(label: string, response: Response): Promise<never> {
+  let body = "";
+  try {
+    body = await response.text();
+  } catch {
+    body = `<unreadable ${response.status}>`;
+  }
+  const error = new Error(`${label}: ${response.status} ${response.statusText}${body ? ` - ${body}` : ""}`);
+  if (response.status === 401 || response.status === 403) {
+    await handleUnauthorized();
+  }
+  throw error;
+}
+
+async function fetchJSON<T>(label: string, url: string): Promise<T> {
+  const response = await fetch(url, {
     cache: "no-store",
     headers: getAuthHeaders(),
   });
 
-  if (response.status === 401 || response.status === 403) {
-    await handleUnauthorized();
-    throw new Error("Unauthorized");
-  }
-
   if (!response.ok) {
-    throw new Error(`Failed to load dashboard overview: ${response.status}`);
+    await handleResponseError(label, response);
   }
 
-  return response.json();
+  return response.json() as Promise<T>;
+}
+
+export function apiBase() {
+  return API_BASE;
+}
+
+async function fetchOverview(): Promise<DashboardOverview> {
+  return fetchJSON("overview", `${API_BASE}/dashboard/overview`);
 }
 
 export function useDashboardOverview(refreshMs = 2000) {
@@ -53,24 +70,7 @@ export function useDashboardOverview(refreshMs = 2000) {
 }
 
 async function fetchHistory(period: string): Promise<HistoryResponse> {
-  const response = await fetch(
-    `${API_BASE}/dashboard/history?period=${encodeURIComponent(period)}`,
-    {
-      cache: "no-store",
-      headers: getAuthHeaders(),
-    }
-  );
-
-  if (response.status === 401 || response.status === 403) {
-    await handleUnauthorized();
-    throw new Error("Unauthorized");
-  }
-
-  if (!response.ok) {
-    throw new Error(`Failed to load history: ${response.status}`);
-  }
-
-  return response.json();
+  return fetchJSON("history", `${API_BASE}/dashboard/history?period=${encodeURIComponent(period)}`);
 }
 
 export function useDashboardHistory(period: string) {
@@ -82,21 +82,7 @@ export function useDashboardHistory(period: string) {
 }
 
 async function fetchCapabilities(): Promise<CapabilitiesResponse> {
-  const response = await fetch(`${API_BASE}/dashboard/capabilities`, {
-    cache: "no-store",
-    headers: getAuthHeaders(),
-  });
-
-  if (response.status === 401 || response.status === 403) {
-    await handleUnauthorized();
-    throw new Error("Unauthorized");
-  }
-
-  if (!response.ok) {
-    throw new Error(`Failed to load capabilities: ${response.status}`);
-  }
-
-  return response.json();
+  return fetchJSON("capabilities", `${API_BASE}/dashboard/capabilities`);
 }
 
 export function useDashboardCapabilities() {
@@ -115,14 +101,8 @@ async function executeOperation(action: string, confirm: boolean): Promise<Opera
     body: JSON.stringify({ action, confirm }),
   });
 
-  if (response.status === 401 || response.status === 403) {
-    await handleUnauthorized();
-    throw new Error("Unauthorized");
-  }
-
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || `Operation failed: ${response.status}`);
+    await handleResponseError("operation", response);
   }
 
   return response.json();
@@ -141,39 +121,11 @@ export function useExecuteOperation() {
 }
 
 async function fetchRecentEvents(): Promise<EventsResponse> {
-  const response = await fetch(`${API_BASE}/events/recent`, {
-    cache: "no-store",
-    headers: getAuthHeaders(),
-  });
-
-  if (response.status === 401 || response.status === 403) {
-    await handleUnauthorized();
-    throw new Error("Unauthorized");
-  }
-
-  if (!response.ok) {
-    throw new Error(`Failed to load events: ${response.status}`);
-  }
-
-  return response.json();
+  return fetchJSON("events", `${API_BASE}/events/recent`);
 }
 
 async function fetchRules(): Promise<RulesResponse> {
-  const response = await fetch(`${API_BASE}/rules`, {
-    cache: "no-store",
-    headers: getAuthHeaders(),
-  });
-
-  if (response.status === 401 || response.status === 403) {
-    await handleUnauthorized();
-    throw new Error("Unauthorized");
-  }
-
-  if (!response.ok) {
-    throw new Error(`Failed to load rules: ${response.status}`);
-  }
-
-  return response.json();
+  return fetchJSON("rules", `${API_BASE}/rules`);
 }
 
 export function useRules() {
@@ -185,21 +137,7 @@ export function useRules() {
 }
 
 async function fetchServices(): Promise<ServicesResponse> {
-  const response = await fetch(`${API_BASE}/services`, {
-    cache: "no-store",
-    headers: getAuthHeaders(),
-  });
-
-  if (response.status === 401 || response.status === 403) {
-    await handleUnauthorized();
-    throw new Error("Unauthorized");
-  }
-
-  if (!response.ok) {
-    throw new Error(`Failed to load services: ${response.status}`);
-  }
-
-  return response.json();
+  return fetchJSON("services", `${API_BASE}/services`);
 }
 
 export function useServices() {
@@ -220,8 +158,7 @@ export function useServices() {
           body: JSON.stringify({ action, name }),
         }).then(async (res) => {
           if (!res.ok) {
-            const text = await res.text();
-            throw new Error(text || `Service action failed: ${res.status}`);
+            await handleResponseError("service action", res);
           }
           return res.json() as Promise<ServiceItem>;
         }),
@@ -233,21 +170,7 @@ export function useServices() {
 }
 
 async function fetchResources(): Promise<ResourcesResponse> {
-  const response = await fetch(`${API_BASE}/resources`, {
-    cache: "no-store",
-    headers: getAuthHeaders(),
-  });
-
-  if (response.status === 401 || response.status === 403) {
-    await handleUnauthorized();
-    throw new Error("Unauthorized");
-  }
-
-  if (!response.ok) {
-    throw new Error(`Failed to load resources: ${response.status}`);
-  }
-
-  return response.json();
+  return fetchJSON("resources", `${API_BASE}/resources`);
 }
 
 export function useResources() {
@@ -258,36 +181,22 @@ export function useResources() {
   });
 }
 
-export function useRecentEvents(limit = 100) {
-  return useQuery({
-    queryKey: ["events", "recent", limit],
-    queryFn: fetchRecentEvents,
-    staleTime: 30_000,
-  });
-}
-
 async function fetchAutomationExecutions(): Promise<AutomationExecutionsResponse> {
-  const response = await fetch(`${API_BASE}/automation/executions`, {
-    cache: "no-store",
-    headers: getAuthHeaders(),
-  });
-
-  if (response.status === 401 || response.status === 403) {
-    await handleUnauthorized();
-    throw new Error("Unauthorized");
-  }
-
-  if (!response.ok) {
-    throw new Error(`Failed to load automation executions: ${response.status}`);
-  }
-
-  return response.json();
+  return fetchJSON("automation", `${API_BASE}/automation/executions`);
 }
 
 export function useAutomationExecutions() {
   return useQuery({
     queryKey: ["automation", "executions"],
     queryFn: fetchAutomationExecutions,
+    staleTime: 30_000,
+  });
+}
+
+export function useRecentEvents(limit = 100) {
+  return useQuery({
+    queryKey: ["events", "recent", limit],
+    queryFn: fetchRecentEvents,
     staleTime: 30_000,
   });
 }

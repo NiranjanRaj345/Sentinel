@@ -7,11 +7,11 @@ type AgentInfo struct {
 	Version      string `json:"version"`
 	Platform     string `json:"platform"`
 	Architecture string `json:"architecture"`
-	GoVersion    string `json:"go_version"`
+	GoVersion    string `json:"goVersion"`
 }
 
 type Metadata struct {
 	Timestamp            time.Time `json:"timestamp"`
-	CollectionDurationMS int64     `json:"collection_duration_ms"`
+	CollectionDurationMS int64     `json:"collectionDurationMs"`
 	Agent                AgentInfo `json:"agent"`
 }
