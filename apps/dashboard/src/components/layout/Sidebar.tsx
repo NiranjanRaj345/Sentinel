@@ -15,6 +15,7 @@ import {
   FileText,
   Wrench,
   Cpu,
+  Play,
 } from "lucide-react";
 import { useUIStore } from "@/stores/ui";
 
@@ -27,6 +28,7 @@ const navigation = [
   { name: "Rules", href: "/rules", icon: FileText },
   { name: "Services", href: "/services", icon: Wrench },
   { name: "Resources", href: "/resources", icon: Cpu },
+  { name: "Automation", href: "/automation", icon: Play },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 

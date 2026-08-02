@@ -17,6 +17,7 @@ import (
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/resources"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/storage/sqlite"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/stream"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/automation"
 )
 
 type Server struct {
@@ -35,6 +36,7 @@ type Server struct {
 	rulesService      *rules.Service
 	servicesService   *services.Service
 	resourcesService  *resources.Service
+	automationService *automation.Service
 }
 
 func New(
@@ -53,6 +55,7 @@ func New(
 	rulesService *rules.Service,
 	servicesService *services.Service,
 	resourcesService *resources.Service,
+	automationService *automation.Service,
 ) *Server {
 
 	server := &Server{
@@ -70,6 +73,7 @@ func New(
 		rulesService:      rulesService,
 		servicesService:   servicesService,
 		resourcesService:  resourcesService,
+		automationService: automationService,
 	}
 
 	mux := http.NewServeMux()

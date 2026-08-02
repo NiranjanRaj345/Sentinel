@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/alert"
@@ -24,12 +25,16 @@ import (
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/service"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/services"
 	serviceslinux "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/services/providers/linux"
+	serviceswindows "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/services/providers/windows"
 	servicesSQLite "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/services/storage/sqlite"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/resources"
 	resourceslinux "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/resources/providers/linux"
+	resourceswindows "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/resources/providers/windows"
 	resourcesSQLite "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/resources/storage/sqlite"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/storage/sqlite"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/stream"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/automation"
+	automationSQLite "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/automation/storage/sqlite"
 )
 
 const ConfigPath = "config.yaml"
@@ -50,6 +55,7 @@ type Application struct {
 	rulesService      *rules.Service
 	servicesService   *services.Service
 	resourcesService  *resources.Service
+	automationService *automation.Service
 }
 
 func New() (*Application, error) {
@@ -99,8 +105,6 @@ func New() (*Application, error) {
 		return nil, fmt.Errorf("open rules storage: %w", err)
 	}
 
-	rulesService := rules.NewService(rulesRepo, nil, nil, log.Component("rules"))
-
 	for _, rule := range rules.SeedRules() {
 		if err := rulesRepo.Save(context.Background(), rule); err != nil {
 			return nil, fmt.Errorf("seed rule %s: %w", rule.ID, err)
@@ -112,16 +116,9 @@ func New() (*Application, error) {
 		return nil, fmt.Errorf("open services storage: %w", err)
 	}
 
-	servicesService := services.NewService(serviceslinux.NewLinuxProvider(log.Component("services")), servicesRepo, log.Component("services"))
+	servicesService := services.NewService(newServiceProvider(log.Component("services")), servicesRepo, log.Component("services"))
 
 	eventsService := events.NewService(eventRepo, nil, log.Component("events"))
-
-	resourcesRepo, err := resourcesSQLite.Open(cfg.Storage.Path)
-	if err != nil {
-		return nil, fmt.Errorf("open resources storage: %w", err)
-	}
-
-	resourcesService := resources.NewService(resourceslinux.NewLinuxProvider(log.Component("resources")), resourcesRepo, eventsService.Publish, log.Component("resources"))
 
 	operationsService := operations.NewService(
 		operationsProvider,
@@ -130,6 +127,23 @@ func New() (*Application, error) {
 		eventsService.Publish,
 		log.Component("operations"),
 	)
+
+	automationRepo, err := automationSQLite.Open(cfg.Storage.Path)
+	if err != nil {
+		return nil, fmt.Errorf("open automation storage: %w", err)
+	}
+
+	automationEngine := automation.NewEngine(operationsService, eventsService.Publish, log.Component("automation"))
+	automationService := automation.NewService(automationEngine, automationRepo, log.Component("automation"))
+
+	rulesService := rules.NewService(rulesRepo, automationEngine, nil, log.Component("rules"))
+
+	resourcesRepo, err := resourcesSQLite.Open(cfg.Storage.Path)
+	if err != nil {
+		return nil, fmt.Errorf("open resources storage: %w", err)
+	}
+
+	resourcesService := resources.NewService(newResourceProvider(log.Component("resources")), resourcesRepo, eventsService.Publish, log.Component("resources"))
 
 	metricsScheduler := scheduler.New(
 		interval,
@@ -164,6 +178,7 @@ func New() (*Application, error) {
 		rulesService,
 		servicesService,
 		resourcesService,
+		automationService,
 	)
 
 	return &Application{
@@ -182,12 +197,28 @@ func New() (*Application, error) {
 		rulesService:      rulesService,
 		servicesService:   servicesService,
 		resourcesService:  resourcesService,
+		automationService: automationService,
 	}, nil
+}
+
+func newServiceProvider(log *logger.Logger) services.Provider {
+	if runtime.GOOS == "windows" {
+		return serviceswindows.NewWindowsProvider(log)
+	}
+	return serviceslinux.NewLinuxProvider(log)
+}
+
+func newResourceProvider(log *logger.Logger) resources.Provider {
+	if runtime.GOOS == "windows" {
+		return resourceswindows.NewWindowsProvider(log)
+	}
+	return resourceslinux.NewLinuxProvider(log)
 }
 
 func (a *Application) Start() error {
 	a.logger.Info("Starting Sentinel Node Agent")
 	a.logger.Info("Configuration loaded")
+	a.logger.Info("Platform: %s", runtime.GOOS)
 
 	a.hub.Start()
 	a.dashboardHub.Start()

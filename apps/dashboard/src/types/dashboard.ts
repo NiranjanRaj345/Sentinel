@@ -157,3 +157,17 @@ export type ServiceItem = {
 export type ServicesResponse = {
   services: ServiceItem[];
 };
+
+export type AutomationExecution = {
+  id: string;
+  ruleId: string;
+  ruleName: string;
+  action: string;
+  success: boolean;
+  message: string;
+  createdAt: string;
+};
+
+export type AutomationExecutionsResponse = {
+  executions: AutomationExecution[];
+};
