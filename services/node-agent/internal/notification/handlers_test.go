@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -58,6 +59,43 @@ func TestHandler_MethodNotAllowed(t *testing.T) {
 
 	rr := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPost, "/notifications/recent", nil)
+	h.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("expected 405, got %d: %s", rr.Code, rr.Body.String())
+	}
+}
+
+func TestTestHandler_Post_ReturnsQueued(t *testing.T) {
+	repo := &stubRepo{}
+	svc := NewService(repo, nil, nil)
+	h := NewTestHandler(svc, nil)
+
+	rr := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/notifications/test", strings.NewReader(`{"provider":"telegram"}`))
+	req.Header.Set("Content-Type", "application/json")
+	h.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rr.Code, rr.Body.String())
+	}
+
+	var resp map[string]string
+	if err := json.NewDecoder(rr.Body).Decode(&resp); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if resp["status"] != "queued" {
+		t.Fatalf("expected status queued, got %s", resp["status"])
+	}
+}
+
+func TestTestHandler_MethodNotAllowed(t *testing.T) {
+	repo := &stubRepo{}
+	svc := NewService(repo, nil, nil)
+	h := NewTestHandler(svc, nil)
+
+	rr := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/notifications/test", nil)
 	h.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusMethodNotAllowed {

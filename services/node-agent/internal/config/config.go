@@ -26,11 +26,33 @@ type AuthConfig struct {
 }
 
 type NotificationsConfig struct {
-	Enabled   bool     `yaml:"enabled"`
-	Providers []string `yaml:"providers"`
+	Enabled   bool                       `yaml:"enabled"`
+	Providers map[string]ProviderConfig `yaml:"providers"`
+}
+
+type ProviderConfig struct {
+	Enabled   bool   `yaml:"enabled"`
+	BotToken  string `yaml:"bot_token"`
+	ChatID    string `yaml:"chat_id"`
 }
 
 func (c NotificationsConfig) Validate() error {
+	if !c.Enabled {
+		return nil
+	}
+
+	for name, provider := range c.Providers {
+		if !provider.Enabled {
+			continue
+		}
+		if provider.BotToken == "" {
+			return fmt.Errorf("notification provider %q: bot_token is required when enabled", name)
+		}
+		if provider.ChatID == "" {
+			return fmt.Errorf("notification provider %q: chat_id is required when enabled", name)
+		}
+	}
+
 	return nil
 }
 
@@ -126,7 +148,7 @@ func Default() Config {
 		},
 		Notifications: NotificationsConfig{
 			Enabled:   true,
-			Providers: []string{},
+			Providers: map[string]ProviderConfig{},
 		},
 	}
 }

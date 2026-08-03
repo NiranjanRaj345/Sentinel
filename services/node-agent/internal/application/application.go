@@ -41,6 +41,7 @@ import (
 	recoverySQLite "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/recovery/storage/sqlite"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/notification"
 	notificationSQLite "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/notification/storage/sqlite"
+	telegramprovider "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/notification/providers/telegram"
 )
 
 const ConfigPath = "config.yaml"
@@ -136,6 +137,22 @@ func New() (*Application, error) {
 	}
 
 	notificationsService := notification.NewService(notificationsRepo, eventsService.Publish, log.Component("notifications"))
+
+	if cfg.Notifications.Enabled {
+		for name, providerCfg := range cfg.Notifications.Providers {
+			if !providerCfg.Enabled {
+				continue
+			}
+			switch name {
+			case "telegram":
+				if providerCfg.BotToken != "" && providerCfg.ChatID != "" {
+					telegramClient := telegramprovider.NewClient(providerCfg.BotToken, log.Component("telegram"))
+					telegramProvider := telegramprovider.NewProvider(telegramClient, providerCfg.ChatID)
+					notificationsService.AddProvider(telegramProvider)
+				}
+			}
+		}
+	}
 
 	operationsService := operations.NewService(
 		operationsProvider,

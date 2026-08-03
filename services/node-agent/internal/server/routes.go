@@ -46,6 +46,7 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.Handle("/recovery/execute", s.authOperate(recovery.NewHandler(s.recoveryService, s.log)))
 	mux.Handle("/recovery/recent", s.authRead(recovery.NewHandler(s.recoveryService, s.log)))
 	mux.Handle("/notifications/recent", s.authRead(notification.NewHandler(s.notificationsService, s.log)))
+	mux.Handle("/notifications/test", s.authOperate(notification.NewTestHandler(s.notificationsService, s.log)))
 }
 
 func (s *Server) authRead(next http.Handler) http.Handler {
