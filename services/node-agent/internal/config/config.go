@@ -74,6 +74,7 @@ type AgentConfig struct {
 
 type LoggingConfig struct {
 	Level string `yaml:"level"`
+	File  string `yaml:"file"`
 }
 
 type MetricsConfig struct {

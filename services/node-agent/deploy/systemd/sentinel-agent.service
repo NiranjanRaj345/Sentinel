@@ -1,0 +1,14 @@
+[Unit]
+Description=Sentinel Node Agent
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/sentinel
+ExecStart=/opt/sentinel/sentinel-agent run
+Restart=always
+RestartSec=5
+Environment=HOME=/opt/sentinel
+
+[Install]
+WantedBy=multi-user.target

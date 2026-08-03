@@ -21,6 +21,8 @@ import (
 
 func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/health", handlers.Health)
+	mux.HandleFunc("/healthz/live", handlers.Live)
+	mux.Handle("/healthz/ready", handlers.Ready(&s.ready))
 
 	mux.Handle("/metrics", s.authRead(handlers.Metrics(s.metricsService)))
 	mux.Handle("/history/latest", s.authRead(handlers.HistoryLatest(s.store)))

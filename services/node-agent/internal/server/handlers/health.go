@@ -1,10 +1,9 @@
 package handlers
 
 import (
-	// "encoding/json"
-	// "net/http"
+	"net/http"
+	"sync/atomic"
 	"time"
-	// "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/version"
 )
 
 type HealthResponse struct {
@@ -16,4 +15,21 @@ type HealthResponse struct {
 type AgentInfo struct {
 	Name    string `json:"name"`
 	Version string `json:"version"`
+}
+
+func Live(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("ok"))
+}
+
+func Ready(ready *atomic.Bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if ready == nil || !ready.Load() {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			_, _ = w.Write([]byte("not ready"))
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ok"))
+	}
 }

@@ -68,3 +68,11 @@ func NewFromString(level string, out io.Writer) (*Logger, error) {
 
 	return New(parsed, out), nil
 }
+
+func ParseLevelOrFallback(level string) Level {
+	parsed, err := ParseLevel(level)
+	if err != nil {
+		return Info
+	}
+	return parsed
+}

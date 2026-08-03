@@ -70,7 +70,11 @@ type Application struct {
 }
 
 func New() (*Application, error) {
-	cfg, err := config.Load(ConfigPath)
+	return NewWithConfig(ConfigPath)
+}
+
+func NewWithConfig(path string) (*Application, error) {
+	cfg, err := config.Load(path)
 	if err != nil {
 		return nil, fmt.Errorf("load config: %w", err)
 	}
@@ -81,6 +85,14 @@ func New() (*Application, error) {
 	log, err := logger.NewFromString(cfg.Logging.Level, os.Stdout)
 	if err != nil {
 		return nil, fmt.Errorf("initialize logger: %w", err)
+	}
+
+	if cfg.Logging.File != "" {
+		file, err := os.OpenFile(cfg.Logging.File, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+		if err != nil {
+			return nil, fmt.Errorf("open log file: %w", err)
+		}
+		log = logger.New(logger.ParseLevelOrFallback(cfg.Logging.Level), file)
 	}
 
 	appLog := log.Component("application")

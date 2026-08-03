@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"net/http"
+	"sync/atomic"
 
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/auth"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/dashboard"
@@ -45,6 +46,7 @@ type Server struct {
 	observerService      *observer.Service
 	recoveryService      *recovery.Service
 	notificationsService *notification.Service
+	ready                atomic.Bool
 }
 
 func New(
@@ -114,6 +116,7 @@ func New(
 
 func (s *Server) Start() error {
 	s.log.Info("HTTP server listening on %s", s.httpServer.Addr)
+	s.ready.Store(true)
 	return s.httpServer.ListenAndServe()
 }
 
