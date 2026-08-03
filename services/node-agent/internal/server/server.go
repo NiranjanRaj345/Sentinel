@@ -21,28 +21,30 @@ import (
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/guardian"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/observer"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/recovery"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/notification"
 )
 
 type Server struct {
-	httpServer        *http.Server
-	log               *logger.Logger
-	systemService     *service.SystemService
-	metricsService    *service.MetricsService
-	store             *sqlite.Store
-	hub               *stream.Hub
-	dashboard         *dashboard.Service
-	dashboardHub      *dashboard.Hub
-	nodeService       *node.Service
-	operationsService *operations.Service
-	authStore         *auth.TokenStore
-	eventsService     *events.Service
-	rulesService      *rules.Service
-	servicesService   *services.Service
-	resourcesService  *resources.Service
-	automationService *automation.Service
-	guardianService   *guardian.Service
-	observerService   *observer.Service
-	recoveryService   *recovery.Service
+	httpServer           *http.Server
+	log                  *logger.Logger
+	systemService        *service.SystemService
+	metricsService       *service.MetricsService
+	store                *sqlite.Store
+	hub                  *stream.Hub
+	dashboard            *dashboard.Service
+	dashboardHub         *dashboard.Hub
+	nodeService          *node.Service
+	operationsService    *operations.Service
+	authStore            *auth.TokenStore
+	eventsService        *events.Service
+	rulesService         *rules.Service
+	servicesService      *services.Service
+	resourcesService     *resources.Service
+	automationService    *automation.Service
+	guardianService      *guardian.Service
+	observerService      *observer.Service
+	recoveryService      *recovery.Service
+	notificationsService *notification.Service
 }
 
 func New(
@@ -65,27 +67,29 @@ func New(
 	guardianService *guardian.Service,
 	observerService *observer.Service,
 	recoveryService *recovery.Service,
+	notificationsService *notification.Service,
 ) *Server {
 
 	server := &Server{
-		log:               log,
-		systemService:     systemService,
-		metricsService:    metricsService,
-		store:             store,
-		hub:               hub,
-		dashboard:         dashboard,
-		dashboardHub:      dashboardHub,
-		nodeService:       nodeService,
-		operationsService: operationsService,
-		authStore:         authStore,
-		eventsService:     eventsService,
-		rulesService:      rulesService,
-		servicesService:   servicesService,
-		resourcesService:  resourcesService,
-		automationService: automationService,
-		guardianService:   guardianService,
-		observerService:   observerService,
-		recoveryService:   recoveryService,
+		log:                  log,
+		systemService:        systemService,
+		metricsService:       metricsService,
+		store:                store,
+		hub:                  hub,
+		dashboard:            dashboard,
+		dashboardHub:         dashboardHub,
+		nodeService:          nodeService,
+		operationsService:    operationsService,
+		authStore:            authStore,
+		eventsService:        eventsService,
+		rulesService:         rulesService,
+		servicesService:      servicesService,
+		resourcesService:     resourcesService,
+		automationService:    automationService,
+		guardianService:      guardianService,
+		observerService:      observerService,
+		recoveryService:      recoveryService,
+		notificationsService: notificationsService,
 	}
 
 	mux := http.NewServeMux()

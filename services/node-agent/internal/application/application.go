@@ -39,30 +39,33 @@ import (
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/observer"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/recovery"
 	recoverySQLite "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/recovery/storage/sqlite"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/notification"
+	notificationSQLite "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/notification/storage/sqlite"
 )
 
 const ConfigPath = "config.yaml"
 
 type Application struct {
-	cfg               config.Config
-	logger            *logger.Logger
-	server            *server.Server
-	scheduler         *scheduler.Scheduler
-	store             *sqlite.Store
-	hub               *stream.Hub
-	engine            *alert.Engine
-	dashboard         *dashboard.Service
-	dashboardHub      *dashboard.Hub
-	nodeService       *node.Service
-	operationsService *operations.Service
-	eventsService     *events.Service
-	rulesService      *rules.Service
-	servicesService   *services.Service
-	resourcesService  *resources.Service
-	automationService *automation.Service
-	guardianService   *guardian.Service
-	observerService   *observer.Service
-	recoveryService   *recovery.Service
+	cfg                config.Config
+	logger             *logger.Logger
+	server             *server.Server
+	scheduler          *scheduler.Scheduler
+	store              *sqlite.Store
+	hub                *stream.Hub
+	engine             *alert.Engine
+	dashboard          *dashboard.Service
+	dashboardHub       *dashboard.Hub
+	nodeService        *node.Service
+	operationsService  *operations.Service
+	eventsService      *events.Service
+	rulesService       *rules.Service
+	servicesService    *services.Service
+	resourcesService   *resources.Service
+	automationService  *automation.Service
+	guardianService    *guardian.Service
+	observerService    *observer.Service
+	recoveryService    *recovery.Service
+	notificationsService *notification.Service
 }
 
 func New() (*Application, error) {
@@ -127,11 +130,19 @@ func New() (*Application, error) {
 
 	eventsService := events.NewService(eventRepo, nil, log.Component("events"))
 
+	notificationsRepo, err := notificationSQLite.OpenNotifications(cfg.Storage.Path)
+	if err != nil {
+		return nil, fmt.Errorf("open notifications storage: %w", err)
+	}
+
+	notificationsService := notification.NewService(notificationsRepo, eventsService.Publish, log.Component("notifications"))
+
 	operationsService := operations.NewService(
 		operationsProvider,
 		operations.NewAuditor(log.Component("operations")),
 		operations.NewValidator(operationsProvider),
 		eventsService.Publish,
+		notificationsService.Send,
 		log.Component("operations"),
 	)
 
@@ -140,10 +151,10 @@ func New() (*Application, error) {
 		return nil, fmt.Errorf("open automation storage: %w", err)
 	}
 
-	guardianService := guardian.NewService(nil, eventsService.Publish, log.Component("guardian"))
+	guardianService := guardian.NewService(nil, eventsService.Publish, notificationsService.Send, log.Component("guardian"))
 
-	automationEngine := automation.NewEngine(operationsService, guardianService, eventsService.Publish, log.Component("automation"))
-	automationService := automation.NewService(automationEngine, automationRepo, guardianService, log.Component("automation"))
+	automationEngine := automation.NewEngine(operationsService, guardianService, eventsService.Publish, notificationsService.Send, log.Component("automation"))
+	automationService := automation.NewService(automationEngine, automationRepo, guardianService, notificationsService.Send, log.Component("automation"))
 
 	recoveryRepo, err := recoverySQLite.OpenRecovery(cfg.Storage.Path)
 	if err != nil {
@@ -151,10 +162,10 @@ func New() (*Application, error) {
 	}
 
 	recoveryExecutor := recovery.NewExecutor(guardianService, eventsService.Publish, log.Component("recovery"))
-	recoveryEngine := recovery.NewEngine(recoveryExecutor, recoveryRepo, eventsService.Publish, log.Component("recovery"))
-	recoveryService := recovery.NewService(recoveryEngine, recoveryRepo, eventsService.Publish, log.Component("recovery"))
+	recoveryEngine := recovery.NewEngine(recoveryExecutor, recoveryRepo, eventsService.Publish, notificationsService.Send, log.Component("recovery"))
+	recoveryService := recovery.NewService(recoveryEngine, recoveryRepo, eventsService.Publish, notificationsService.Send, log.Component("recovery"))
 
-	observerService := observer.NewService(nil, eventsService.Publish, log.Component("observer"))
+	observerService := observer.NewService(nil, eventsService.Publish, notificationsService.Send, log.Component("observer"))
 
 	rulesService := rules.NewService(rulesRepo, automationEngine, nil, log.Component("rules"))
 
@@ -172,6 +183,7 @@ func New() (*Application, error) {
 		hub,
 		engine,
 		eventsService.Publish,
+		notificationsService.Send,
 	)
 	metricsService := service.NewMetricsService(metricsScheduler)
 	dashboardService := dashboard.NewService(metricsScheduler, engine, cfg, dashboardHub)
@@ -202,28 +214,30 @@ func New() (*Application, error) {
 		guardianService,
 		observerService,
 		recoveryService,
+		notificationsService,
 	)
 
 	return &Application{
-		cfg:               cfg,
-		logger:            appLog,
-		server:            srv,
-		scheduler:         metricsScheduler,
-		store:             store,
-		hub:               hub,
-		engine:            engine,
-		dashboard:         dashboardService,
-		dashboardHub:      dashboardHub,
-		nodeService:       nodeService,
-		operationsService: operationsService,
-		eventsService:     eventsService,
-		rulesService:      rulesService,
-		servicesService:   servicesService,
-		resourcesService:  resourcesService,
-		automationService: automationService,
-		guardianService:   guardianService,
-		observerService:   observerService,
-		recoveryService:   recoveryService,
+		cfg:                cfg,
+		logger:             appLog,
+		server:             srv,
+		scheduler:          metricsScheduler,
+		store:              store,
+		hub:                hub,
+		engine:             engine,
+		dashboard:          dashboardService,
+		dashboardHub:       dashboardHub,
+		nodeService:        nodeService,
+		operationsService:  operationsService,
+		eventsService:      eventsService,
+		rulesService:       rulesService,
+		servicesService:    servicesService,
+		resourcesService:   resourcesService,
+		automationService:  automationService,
+		guardianService:    guardianService,
+		observerService:    observerService,
+		recoveryService:    recoveryService,
+		notificationsService: notificationsService,
 	}, nil
 }
 
@@ -288,6 +302,10 @@ func (a *Application) Shutdown(ctx context.Context) error {
 
 	if err := a.recoveryService.Close(); err != nil {
 		a.logger.Error("failed to close recovery storage: %v", err)
+	}
+
+	if err := a.notificationsService.Close(); err != nil {
+		a.logger.Error("failed to close notifications storage: %v", err)
 	}
 
 	return a.server.Shutdown(ctx)

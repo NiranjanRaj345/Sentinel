@@ -6,24 +6,26 @@ import (
 
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/events"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/logger"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/notification"
 )
 
 type Service struct {
 	engine       *Engine
 	repo         Repository
 	publish      func(context.Context, events.Event) error
+	notify       func(context.Context, notification.Notification)
 	activePolicy *Policy
 	log          *logger.Logger
 }
 
-func NewService(engine *Engine, repo Repository, publish func(context.Context, events.Event) error, log *logger.Logger) *Service {
+func NewService(engine *Engine, repo Repository, publish func(context.Context, events.Event) error, notify func(context.Context, notification.Notification), log *logger.Logger) *Service {
 	if engine == nil {
-		engine = NewEngine(nil, repo, nil, log)
+		engine = NewEngine(nil, repo, publish, notify, log)
 	}
 	if log == nil {
 		log = logger.New(logger.Info, nil)
 	}
-	return &Service{engine: engine, repo: repo, publish: publish, log: log}
+	return &Service{engine: engine, repo: repo, publish: publish, notify: notify, log: log}
 }
 
 func (s *Service) Execute(ctx context.Context, policyID, target string) (Execution, error) {

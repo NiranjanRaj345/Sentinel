@@ -7,23 +7,25 @@ import (
 
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/events"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/logger"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/notification"
 )
 
 type Engine struct {
 	executor *Executor
 	repo     Repository
 	publish  func(context.Context, events.Event) error
+	notify   func(context.Context, notification.Notification)
 	log      *logger.Logger
 }
 
-func NewEngine(executor *Executor, repo Repository, publish func(context.Context, events.Event) error, log *logger.Logger) *Engine {
+func NewEngine(executor *Executor, repo Repository, publish func(context.Context, events.Event) error, notify func(context.Context, notification.Notification), log *logger.Logger) *Engine {
 	if executor == nil {
 		executor = NewExecutor(nil, nil, log)
 	}
 	if log == nil {
 		log = logger.New(logger.Info, nil)
 	}
-	return &Engine{executor: executor, repo: repo, publish: publish, log: log}
+	return &Engine{executor: executor, repo: repo, publish: publish, notify: notify, log: log}
 }
 
 func (e *Engine) Execute(ctx context.Context, policy Policy, target string) (Execution, error) {
@@ -111,7 +113,7 @@ func (e *Engine) saveExecution(ctx context.Context, execution Execution) error {
 }
 
 func (e *Engine) emitEvent(ctx context.Context, execution Execution) {
-	if e.publish == nil {
+	if e.publish == nil && e.notify == nil {
 		return
 	}
 
@@ -120,14 +122,30 @@ func (e *Engine) emitEvent(ctx context.Context, execution Execution) {
 		severity = events.SeverityCritical
 	}
 
-	_ = e.publish(ctx, events.Event{
-		Type:     events.EventTypeSystem,
-		Severity: severity,
-		Source:   events.SourceResources,
-		Title:    fmt.Sprintf("Recovery %s", execution.Status),
-		Message:  execution.Message,
-		Metadata: map[string]interface{}{"executionId": execution.ID, "policyId": execution.PolicyID},
-	})
+	if e.publish != nil {
+		_ = e.publish(ctx, events.Event{
+			Type:     events.EventTypeSystem,
+			Severity: severity,
+			Source:   events.SourceResources,
+			Title:    fmt.Sprintf("Recovery %s", execution.Status),
+			Message:  execution.Message,
+			Metadata: map[string]interface{}{"executionId": execution.ID, "policyId": execution.PolicyID},
+		})
+	}
+
+	if e.notify != nil {
+		notifSeverity := notification.SeverityInfo
+		if execution.Status == ExecutionStatusFailed {
+			notifSeverity = notification.SeverityCritical
+		}
+		e.notify(ctx, notification.NewNotification(
+			execution.ID,
+			fmt.Sprintf("Recovery %s", execution.Status),
+			execution.Message,
+			notifSeverity,
+			notification.SourceRecovery,
+		))
+	}
 }
 
 func generateID() string {

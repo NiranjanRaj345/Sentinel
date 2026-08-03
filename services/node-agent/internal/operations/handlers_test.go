@@ -9,7 +9,7 @@ import (
 )
 
 func TestHandler_Post_InvalidJSON_Returns400(t *testing.T) {
-	svc := NewService(nil, NewAuditor(nil), NewValidator(nil), nil, nil)
+	svc := NewService(nil, NewAuditor(nil), NewValidator(nil), nil, nil, nil)
 	h := NewHandler(svc, nil)
 
 	rr := httptest.NewRecorder()
@@ -22,7 +22,7 @@ func TestHandler_Post_InvalidJSON_Returns400(t *testing.T) {
 }
 
 func TestHandler_Post_ValidationFailure_Returns400(t *testing.T) {
-	svc := NewService(nil, NewAuditor(nil), NewValidator(nil), nil, nil)
+	svc := NewService(nil, NewAuditor(nil), NewValidator(nil), nil, nil, nil)
 	h := NewHandler(svc, nil)
 
 	rr := httptest.NewRecorder()
@@ -44,7 +44,7 @@ func TestHandler_Post_ValidationFailure_Returns400(t *testing.T) {
 
 func TestHandler_Post_Success_ReturnsResult(t *testing.T) {
 	provider := &stubProvider{supported: true}
-	svc := NewService(provider, NewAuditor(nil), NewValidator(provider), nil, nil)
+	svc := NewService(provider, NewAuditor(nil), NewValidator(provider), nil, nil, nil)
 	h := NewHandler(svc, nil)
 
 	rr := httptest.NewRecorder()
@@ -65,7 +65,7 @@ func TestHandler_Post_Success_ReturnsResult(t *testing.T) {
 }
 
 func TestHandler_MethodNotAllowed_Returns405(t *testing.T) {
-	svc := NewService(nil, NewAuditor(nil), NewValidator(nil), nil, nil)
+	svc := NewService(nil, NewAuditor(nil), NewValidator(nil), nil, nil, nil)
 	h := NewHandler(svc, nil)
 
 	rr := httptest.NewRecorder()

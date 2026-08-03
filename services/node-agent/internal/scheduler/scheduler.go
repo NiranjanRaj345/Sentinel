@@ -3,6 +3,7 @@ package scheduler
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/events"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/logger"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/metrics"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/notification"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/storage/sqlite"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/stream"
 )
@@ -23,6 +25,7 @@ type Scheduler struct {
 
 	publishDashboard func()
 	publishEvents    func(context.Context, events.Event) error
+	notify           func(context.Context, notification.Notification)
 
 	latest  metrics.Info
 	lastErr error
@@ -62,6 +65,7 @@ func New(
 	hub *stream.Hub,
 	engine *alert.Engine,
 	publish func(context.Context, events.Event) error,
+	notify func(context.Context, notification.Notification),
 ) *Scheduler {
 	return &Scheduler{
 		interval:      interval,
@@ -70,6 +74,7 @@ func New(
 		hub:           hub,
 		engine:        engine,
 		publishEvents: publish,
+		notify:        notify,
 		prevAlerts:    make(map[string]alert.Event),
 	}
 }
@@ -86,7 +91,7 @@ func (s *Scheduler) emitSystemEvent(title, message string) {
 }
 
 func (s *Scheduler) emitAlertEvents(active []alert.Event) {
-	if s.publishEvents == nil {
+	if s.publishEvents == nil && s.notify == nil {
 		return
 	}
 
@@ -97,13 +102,26 @@ func (s *Scheduler) emitAlertEvents(active []alert.Event) {
 
 	for id, prev := range s.prevAlerts {
 		if _, ok := current[id]; !ok {
-			_ = s.publishEvents(context.Background(), events.AlertCleared(id, prev.RuleName))
+			if s.publishEvents != nil {
+				_ = s.publishEvents(context.Background(), events.AlertCleared(id, prev.RuleName))
+			}
 		}
 	}
 
 	for _, e := range active {
 		if _, ok := s.prevAlerts[e.RuleID]; !ok {
-			_ = s.publishEvents(context.Background(), events.AlertRaised(e.RuleID, e.RuleName, events.Severity(e.Severity), e.Value, e.Threshold))
+			if s.publishEvents != nil {
+				_ = s.publishEvents(context.Background(), events.AlertRaised(e.RuleID, e.RuleName, events.Severity(e.Severity), e.Value, e.Threshold))
+			}
+			if s.notify != nil && e.Severity == alert.SeverityCritical {
+				s.notify(context.Background(), notification.NewNotification(
+					"alert-"+e.RuleID,
+					e.RuleName,
+					fmt.Sprintf("%s: %.1f (threshold %.1f)", e.Metric, e.Value, e.Threshold),
+					notification.SeverityCritical,
+					notification.SourceAlert,
+				))
+			}
 		}
 	}
 

@@ -7,7 +7,7 @@ import (
 )
 
 func TestService_Execute_ValidationFailure(t *testing.T) {
-	svc := NewService(nil, nil, NewValidator(nil), nil, nil)
+	svc := NewService(nil, nil, NewValidator(nil), nil, nil, nil)
 	_, err := svc.Execute(context.Background(), Request{Action: ActionRestart, Confirm: false})
 	if err == nil {
 		t.Fatal("expected validation error")
@@ -17,7 +17,7 @@ func TestService_Execute_ValidationFailure(t *testing.T) {
 func TestService_Execute_Success(t *testing.T) {
 	provider := &stubProvider{supported: true}
 	auditor := &stubAuditor{}
-	svc := NewService(provider, auditor, NewValidator(provider), nil, nil)
+	svc := NewService(provider, auditor, NewValidator(provider), nil, nil, nil)
 
 	result, err := svc.Execute(context.Background(), Request{Action: ActionRestart, Confirm: true})
 	if err != nil {
@@ -33,7 +33,7 @@ func TestService_Execute_Success(t *testing.T) {
 
 func TestService_Execute_ProviderFailure(t *testing.T) {
 	provider := &stubProvider{supported: true, execErr: errors.New("boom")}
-	svc := NewService(provider, NewAuditor(nil), NewValidator(provider), nil, nil)
+	svc := NewService(provider, NewAuditor(nil), NewValidator(provider), nil, nil, nil)
 
 	_, err := svc.Execute(context.Background(), Request{Action: ActionRestart, Confirm: true})
 	if err == nil {

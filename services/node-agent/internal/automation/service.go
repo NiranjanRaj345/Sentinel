@@ -6,24 +6,26 @@ import (
 
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/guardian"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/logger"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/notification"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/rules"
 )
 
 type Service struct {
-	engine        *Engine
-	repo          Repository
-	log           *logger.Logger
+	engine         *Engine
+	repo           Repository
+	log            *logger.Logger
 	guardianService *guardian.Service
+	notify         func(context.Context, notification.Notification)
 }
 
-func NewService(engine *Engine, repo Repository, guardianService *guardian.Service, log *logger.Logger) *Service {
+func NewService(engine *Engine, repo Repository, guardianService *guardian.Service, notify func(context.Context, notification.Notification), log *logger.Logger) *Service {
 	if engine == nil {
-		engine = NewEngine(nil, guardianService, nil, log)
+		engine = NewEngine(nil, guardianService, nil, notify, log)
 	}
 	if log == nil {
 		log = logger.New(logger.Info, nil)
 	}
-	return &Service{engine: engine, repo: repo, guardianService: guardianService, log: log}
+	return &Service{engine: engine, repo: repo, guardianService: guardianService, notify: notify, log: log}
 }
 
 func (s *Service) Dispatch(ctx context.Context, match rules.Match) error {

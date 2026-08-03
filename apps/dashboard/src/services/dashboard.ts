@@ -22,6 +22,8 @@ import type {
   ExecuteRecoveryResponse,
   ObserverStatus,
   ObserverEnvironment,
+  Notification,
+  NotificationsResponse,
 } from "@/types/dashboard";
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8080").replace(/\/$/, "");
@@ -361,5 +363,17 @@ export function useObserverEnvironment(refreshMs = 5000) {
     refetchInterval: refreshMs,
     refetchIntervalInBackground: false,
     staleTime: 0,
+  });
+}
+
+async function fetchNotifications(): Promise<NotificationsResponse> {
+  return fetchJSON("notifications", `${API_BASE}/notifications/recent`);
+}
+
+export function useNotifications(staleMs = 30_000) {
+  return useQuery({
+    queryKey: ["notifications"],
+    queryFn: fetchNotifications,
+    staleTime: staleMs,
   });
 }

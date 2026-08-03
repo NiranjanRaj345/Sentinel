@@ -6,6 +6,7 @@ import (
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/events"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/guardian"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/logger"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/notification"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/operations"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/rules"
 )
@@ -14,10 +15,11 @@ type Engine struct {
 	operationsService *operations.Service
 	guardianService   *guardian.Service
 	publish           func(context.Context, events.Event) error
+	notify            func(context.Context, notification.Notification)
 	log               *logger.Logger
 }
 
-func NewEngine(operationsService *operations.Service, guardianService *guardian.Service, publish func(context.Context, events.Event) error, log *logger.Logger) *Engine {
+func NewEngine(operationsService *operations.Service, guardianService *guardian.Service, publish func(context.Context, events.Event) error, notify func(context.Context, notification.Notification), log *logger.Logger) *Engine {
 	if log == nil {
 		log = logger.New(logger.Info, nil)
 	}
@@ -25,6 +27,7 @@ func NewEngine(operationsService *operations.Service, guardianService *guardian.
 		operationsService: operationsService,
 		guardianService:   guardianService,
 		publish:           publish,
+		notify:            notify,
 		log:               log,
 	}
 }
@@ -40,6 +43,15 @@ func (e *Engine) Dispatch(ctx context.Context, match rules.Match) error {
 			e.log.Info("automation notification: rule=%s event=%s", match.Rule.ID, match.Event.ID)
 			if e.publish != nil {
 				_ = e.publish(ctx, events.SystemEvent("rule_notification", "Rule matched: "+match.Rule.Name))
+			}
+			if e.notify != nil {
+				e.notify(ctx, notification.NewNotification(
+					"automation-"+match.Rule.ID,
+					"Rule matched: "+match.Rule.Name,
+					match.Rule.Name+" triggered "+match.Event.Type+" event",
+					notification.SeverityInfo,
+					notification.SourceAutomation,
+				))
 			}
 		case rules.ActionExecute:
 			e.executeOperation(ctx, match)

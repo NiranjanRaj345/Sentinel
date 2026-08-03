@@ -11,17 +11,27 @@ import (
 )
 
 type Config struct {
-	Server  ServerConfig  `yaml:"server"`
-	Agent   AgentConfig   `yaml:"agent"`
-	Logging LoggingConfig `yaml:"logging"`
-	Metrics MetricsConfig `yaml:"metrics"`
-	Storage StorageConfig `yaml:"storage"`
-	Alerts  AlertsConfig  `yaml:"alerts"`
-	Auth    AuthConfig    `yaml:"auth"`
+	Server       ServerConfig       `yaml:"server"`
+	Agent        AgentConfig        `yaml:"agent"`
+	Logging      LoggingConfig      `yaml:"logging"`
+	Metrics      MetricsConfig      `yaml:"metrics"`
+	Storage      StorageConfig      `yaml:"storage"`
+	Alerts       AlertsConfig       `yaml:"alerts"`
+	Auth         AuthConfig         `yaml:"auth"`
+	Notifications NotificationsConfig `yaml:"notifications"`
 }
 
 type AuthConfig struct {
 	Tokens []AuthTokenConfig `yaml:"tokens"`
+}
+
+type NotificationsConfig struct {
+	Enabled   bool     `yaml:"enabled"`
+	Providers []string `yaml:"providers"`
+}
+
+func (c NotificationsConfig) Validate() error {
+	return nil
 }
 
 type AuthTokenConfig struct {
@@ -114,6 +124,10 @@ func Default() Config {
 				},
 			},
 		},
+		Notifications: NotificationsConfig{
+			Enabled:   true,
+			Providers: []string{},
+		},
 	}
 }
 
@@ -147,6 +161,10 @@ func (c Config) Validate() error {
 	}
 
 	if err := c.Auth.Validate(); err != nil {
+		return err
+	}
+
+	if err := c.Notifications.Validate(); err != nil {
 		return err
 	}
 

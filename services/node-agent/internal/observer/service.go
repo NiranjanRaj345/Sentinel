@@ -7,11 +7,13 @@ import (
 
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/events"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/logger"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/notification"
 )
 
 type Service struct {
 	client    *Client
 	publish   func(context.Context, events.Event) error
+	notify    func(context.Context, notification.Notification)
 	status    StatusResponse
 	statusMu  sync.RWMutex
 	env       EnvironmentResponse
@@ -19,14 +21,14 @@ type Service struct {
 	log       *logger.Logger
 }
 
-func NewService(client *Client, publish func(context.Context, events.Event) error, log *logger.Logger) *Service {
+func NewService(client *Client, publish func(context.Context, events.Event) error, notify func(context.Context, notification.Notification), log *logger.Logger) *Service {
 	if client == nil {
 		client = NewClient("http://localhost:8082", log)
 	}
 	if log == nil {
 		log = logger.New(logger.Info, nil)
 	}
-	return &Service{client: client, publish: publish, log: log}
+	return &Service{client: client, publish: publish, notify: notify, log: log}
 }
 
 func (s *Service) Status(ctx context.Context) (StatusResponse, error) {
@@ -37,7 +39,23 @@ func (s *Service) Status(ctx context.Context) (StatusResponse, error) {
 	if err != nil {
 		return status, err
 	}
+	prev := s.cachedStatus()
 	s.setStatus(status)
+
+	if s.notify != nil && prev.Status != "" && prev.Status != status.Status {
+		severity := notification.SeverityInfo
+		if status.Status == ObserverOffline {
+			severity = notification.SeverityCritical
+		}
+		s.notify(ctx, notification.NewNotification(
+			"observer-status-"+string(status.Status),
+			"Observer "+string(status.Status),
+			"Observer status changed to "+string(status.Status),
+			severity,
+			notification.SourceObserver,
+		))
+	}
+
 	return status, nil
 }
 

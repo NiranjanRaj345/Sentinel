@@ -26,6 +26,7 @@ const (
 	SourceScheduler  Source = "scheduler"
 	SourceResources  Source = "resources"
 	SourceGuardian   Source = "guardian"
+	SourceSystem     Source = "system"
 )
 
 type Event struct {

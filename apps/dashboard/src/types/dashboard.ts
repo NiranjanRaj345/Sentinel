@@ -216,6 +216,23 @@ export type ObserverStatus = {
   lastSeen: string;
 };
 
+export type Notification = {
+  id: string;
+  title: string;
+  message: string;
+  severity: "info" | "warning" | "critical";
+  source: string;
+  provider?: string;
+  status: "pending" | "sent" | "failed";
+  error?: string;
+  createdAt: string;
+  sentAt?: string;
+};
+
+export type NotificationsResponse = {
+  notifications: Notification[];
+};
+
 export type ObserverEnvironment = {
   temperature: number;
   humidity: number;

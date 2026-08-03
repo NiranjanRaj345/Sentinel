@@ -7,24 +7,26 @@ import (
 
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/events"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/logger"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/notification"
 )
 
 type Service struct {
-	client   *Client
-	publish  func(context.Context, events.Event) error
-	status   StatusResponse
-	statusMu sync.RWMutex
-	log      *logger.Logger
+	client    *Client
+	publish   func(context.Context, events.Event) error
+	notify    func(context.Context, notification.Notification)
+	status    StatusResponse
+	statusMu  sync.RWMutex
+	log       *logger.Logger
 }
 
-func NewService(client *Client, publish func(context.Context, events.Event) error, log *logger.Logger) *Service {
+func NewService(client *Client, publish func(context.Context, events.Event) error, notify func(context.Context, notification.Notification), log *logger.Logger) *Service {
 	if client == nil {
 		client = NewClient("http://localhost:8081", log)
 	}
 	if log == nil {
 		log = logger.New(logger.Info, nil)
 	}
-	return &Service{client: client, publish: publish, log: log}
+	return &Service{client: client, publish: publish, notify: notify, log: log}
 }
 
 func (s *Service) Status(ctx context.Context) (StatusResponse, error) {
@@ -49,6 +51,19 @@ func (s *Service) Power(ctx context.Context, action PowerAction) error {
 	if s.publish != nil {
 		_ = s.publish(ctx, events.SystemEvent("guardian_power", "Guardian power action: "+string(action)))
 	}
+	if s.notify != nil {
+		severity := notification.SeverityInfo
+		if action == PowerActionPress {
+			severity = notification.SeverityWarning
+		}
+		s.notify(ctx, notification.NewNotification(
+			"guardian-power-"+string(action),
+			"Guardian power action",
+			"Guardian power action: "+string(action),
+			severity,
+			notification.SourceGuardian,
+		))
+	}
 	return nil
 }
 
@@ -61,6 +76,19 @@ func (s *Service) Reset(ctx context.Context, action ResetAction) error {
 	}
 	if s.publish != nil {
 		_ = s.publish(ctx, events.SystemEvent("guardian_reset", "Guardian reset action: "+string(action)))
+	}
+	if s.notify != nil {
+		severity := notification.SeverityInfo
+		if action == ResetActionPress {
+			severity = notification.SeverityWarning
+		}
+		s.notify(ctx, notification.NewNotification(
+			"guardian-reset-"+string(action),
+			"Guardian reset action",
+			"Guardian reset action: "+string(action),
+			severity,
+			notification.SourceGuardian,
+		))
 	}
 	return nil
 }
