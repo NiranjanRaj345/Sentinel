@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
+import { Toast } from "@/components/toast/Toast";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,7 +23,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body suppressHydrationWarning>
-        <QueryClientProvider client={client}>{children}</QueryClientProvider>
+        <QueryClientProvider client={client}>
+          {children}
+          <Toast />
+        </QueryClientProvider>
       </body>
     </html>
   );

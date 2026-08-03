@@ -15,7 +15,7 @@ function formatCondition(condition: { field: string; operator: string; value: st
 }
 
 export default function RulesRoute() {
-  const { data, isLoading, isError } = useRules();
+  const { data, isLoading, isError, refetch } = useRules();
   const rules = data?.rules ?? [];
 
   return (
@@ -35,8 +35,14 @@ export default function RulesRoute() {
         )}
 
         {isError && (
-          <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
-            Failed to load rules.
+          <div className="flex items-center justify-between rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
+            <span>Failed to load rules.</span>
+            <button
+              onClick={() => refetch()}
+              className="rounded-md bg-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/20"
+            >
+              Retry
+            </button>
           </div>
         )}
 

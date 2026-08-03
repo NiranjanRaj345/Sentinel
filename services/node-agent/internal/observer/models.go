@@ -12,7 +12,7 @@ const (
 type StatusResponse struct {
 	Status    ObserverStatus `json:"status"`
 	Firmware  string         `json:"firmware"`
-	Uptime    time.Duration  `json:"uptime"`
+	Uptime    int64          `json:"uptime"`
 	LastSeen  time.Time      `json:"lastSeen"`
 }
 

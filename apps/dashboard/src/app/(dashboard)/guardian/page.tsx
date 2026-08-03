@@ -3,6 +3,7 @@
 import React from "react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { useGuardianStatus, useGuardianPower, useGuardianReset } from "@/services/dashboard";
+import { useToastStore } from "@/stores/toast";
 import type { GuardianStatus } from "@/types/dashboard";
 
 function formatUptime(uptimeSeconds: number): string {
@@ -25,11 +26,34 @@ function formatLastSeen(lastSeen: string): string {
 }
 
 export default function GuardianRoute() {
-  const { data: status, isLoading, isError } = useGuardianStatus();
+  const { data: status, isLoading, isError, refetch } = useGuardianStatus();
   const powerMutation = useGuardianPower();
   const resetMutation = useGuardianReset();
+  const addToast = useToastStore((state) => state.addToast);
 
   const guardianStatus = status as GuardianStatus | undefined;
+
+  React.useEffect(() => {
+    if (powerMutation.isError) {
+      addToast(
+        powerMutation.error instanceof Error ? powerMutation.error.message : "Power action failed",
+        "error"
+      );
+    } else if (powerMutation.isSuccess) {
+      addToast("Power action sent", "success");
+    }
+  }, [powerMutation.isError, powerMutation.isSuccess, powerMutation.error, addToast]);
+
+  React.useEffect(() => {
+    if (resetMutation.isError) {
+      addToast(
+        resetMutation.error instanceof Error ? resetMutation.error.message : "Reset action failed",
+        "error"
+      );
+    } else if (resetMutation.isSuccess) {
+      addToast("Reset action sent", "success");
+    }
+  }, [resetMutation.isError, resetMutation.isSuccess, resetMutation.error, addToast]);
 
   const handlePower = (action: "press" | "release") => {
     powerMutation.mutate(action);
@@ -48,14 +72,22 @@ export default function GuardianRoute() {
         </div>
 
         {isLoading && (
-          <div className="rounded-lg border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
-            Loading Guardian status...
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="h-24 animate-pulse rounded-lg bg-white/5" />
+            ))}
           </div>
         )}
 
         {isError && (
-          <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
-            Failed to load Guardian status.
+          <div className="flex items-center justify-between rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
+            <span>Failed to load Guardian status.</span>
+            <button
+              onClick={() => refetch()}
+              className="rounded-md bg-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/20"
+            >
+              Retry
+            </button>
           </div>
         )}
 

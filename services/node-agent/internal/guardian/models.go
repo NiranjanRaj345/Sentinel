@@ -26,7 +26,7 @@ const (
 type StatusResponse struct {
 	Status         GuardianStatus `json:"status"`
 	Firmware       string         `json:"firmware"`
-	Uptime         time.Duration  `json:"uptime"`
+	Uptime         int64          `json:"uptime"`
 	PowerButton    bool           `json:"powerButton"`
 	ResetButton    bool           `json:"resetButton"`
 	PowerLed       bool           `json:"powerLed"`

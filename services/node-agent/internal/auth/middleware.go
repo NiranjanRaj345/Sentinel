@@ -8,19 +8,13 @@ import (
 func Authenticate(store *TokenStore) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			header := r.Header.Get("Authorization")
-			if header == "" {
+			tokenValue := extractToken(r)
+			if tokenValue == "" {
 				http.Error(w, "missing authorization header", http.StatusUnauthorized)
 				return
 			}
 
-			parts := strings.SplitN(header, " ", 2)
-			if len(parts) != 2 || parts[0] != "Bearer" {
-				http.Error(w, "invalid authorization header", http.StatusUnauthorized)
-				return
-			}
-
-			token, ok := store.Resolve(parts[1])
+			token, ok := store.Resolve(tokenValue)
 			if !ok {
 				http.Error(w, "invalid token", http.StatusUnauthorized)
 				return
@@ -30,6 +24,23 @@ func Authenticate(store *TokenStore) func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+func extractToken(r *http.Request) string {
+	header := r.Header.Get("Authorization")
+	if header != "" {
+		parts := strings.SplitN(header, " ", 2)
+		if len(parts) == 2 && parts[0] == "Bearer" {
+			return parts[1]
+		}
+	}
+
+	token := r.URL.Query().Get("token")
+	if token != "" {
+		return token
+	}
+
+	return ""
 }
 
 func Authorize(permission Permission) func(http.Handler) http.Handler {

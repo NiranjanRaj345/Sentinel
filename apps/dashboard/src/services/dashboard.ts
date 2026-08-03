@@ -62,16 +62,23 @@ async function handleResponseError(label: string, response: Response): Promise<n
 }
 
 async function fetchJSON<T>(label: string, url: string): Promise<T> {
-  const response = await fetch(url, {
-    cache: "no-store",
-    headers: getAuthHeaders(),
-  });
+  try {
+    const response = await fetch(url, {
+      cache: "no-store",
+      headers: getAuthHeaders(),
+    });
 
-  if (!response.ok) {
-    await handleResponseError(label, response);
+    if (!response.ok) {
+      await handleResponseError(label, response);
+    }
+
+    return response.json() as Promise<T>;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`${label}: ${error.message}`);
+    }
+    throw new Error(`${label}: network request failed`);
   }
-
-  return response.json() as Promise<T>;
 }
 
 export function apiBase() {

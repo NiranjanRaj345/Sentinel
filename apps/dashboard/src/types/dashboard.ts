@@ -136,6 +136,7 @@ export type ResourceType = "remote_desktop" | "vpn" | "container_runtime" | "med
 export type ResourceHealth = "healthy" | "degraded" | "unavailable" | "unknown";
 
 export type Resource = {
+  id: string;
   name: string;
   type: ResourceType;
   health: ResourceHealth;

@@ -3,13 +3,27 @@
 import React from "react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { useRecoveryExecutions, useExecuteRecovery } from "@/services/dashboard";
+import { useToastStore } from "@/stores/toast";
 import type { RecoveryExecution } from "@/types/dashboard";
 
 export default function RecoveryRoute() {
-  const { data, isLoading, isError } = useRecoveryExecutions();
+  const { data, isLoading, isError, refetch } = useRecoveryExecutions();
   const executeMutation = useExecuteRecovery();
-
   const executions = (data?.executions ?? []) as RecoveryExecution[];
+  const addToast = useToastStore((state) => state.addToast);
+
+  React.useEffect(() => {
+    if (executeMutation.isError) {
+      addToast(
+        executeMutation.error instanceof Error
+          ? executeMutation.error.message
+          : "Recovery execution failed",
+        "error"
+      );
+    } else if (executeMutation.isSuccess) {
+      addToast("Recovery execution started", "success");
+    }
+  }, [executeMutation.isError, executeMutation.isSuccess, executeMutation.error, addToast]);
 
   const handleExecute = () => {
     executeMutation.mutate({ policyId: "desktop_recovery", target: "" });
@@ -34,14 +48,22 @@ export default function RecoveryRoute() {
         </div>
 
         {isLoading && (
-          <div className="rounded-lg border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
-            Loading recovery history...
+          <div className="space-y-3">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="h-20 animate-pulse rounded-lg bg-white/5" />
+            ))}
           </div>
         )}
 
         {isError && (
-          <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
-            Failed to load recovery history.
+          <div className="flex items-center justify-between rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
+            <span>Failed to load recovery history.</span>
+            <button
+              onClick={() => refetch()}
+              className="rounded-md bg-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/20"
+            >
+              Retry
+            </button>
           </div>
         )}
 

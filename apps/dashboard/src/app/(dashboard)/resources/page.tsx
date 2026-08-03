@@ -22,7 +22,7 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 export default function ResourcesRoute() {
-  const { data, isLoading, isError } = useResources();
+  const { data, isLoading, isError, refetch } = useResources();
   const resources = data?.resources ?? [];
 
   return (
@@ -36,14 +36,22 @@ export default function ResourcesRoute() {
         </div>
 
         {isLoading && (
-          <div className="rounded-lg border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
-            Loading resources...
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={index} className="h-32 animate-pulse rounded-lg bg-white/5" />
+            ))}
           </div>
         )}
 
         {isError && (
-          <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
-            Failed to load resources.
+          <div className="flex items-center justify-between rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
+            <span>Failed to load resources.</span>
+            <button
+              onClick={() => refetch()}
+              className="rounded-md bg-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/20"
+            >
+              Retry
+            </button>
           </div>
         )}
 
@@ -84,7 +92,7 @@ export default function ResourcesRoute() {
           ))}
         </div>
 
-        {!isLoading && resources.length === 0 && (
+        {!isLoading && resources.length === 0 && !isError && (
           <div className="rounded-lg border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
             No resources discovered on this node.
           </div>

@@ -9,6 +9,7 @@ import type { CapabilityStatus, DashboardOverview, DashboardStatus } from "@/typ
 import { MetricCard } from "@/components/pages/MetricCard";
 import { Wifi, WifiOff, RefreshCw, Power, RotateCw, Moon } from "lucide-react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { useToastStore } from "@/stores/toast";
 
 const statusConfig: Record<
   DashboardStatus,
@@ -65,24 +66,31 @@ function formatBytes(value: number) {
 }
 
 export function OverviewPage() {
-  const { data, isLoading, isError } = useDashboardOverview();
+  const { data, isLoading, isError, refetch } = useDashboardOverview();
   const { status } = useDashboardSocket();
   const { data: capabilities } = useDashboardCapabilities();
   const executeMutation = useExecuteOperation();
+  const addToast = useToastStore((state) => state.addToast);
 
-  const [toast, setToast] = React.useState<string | null>(null);
-
-  const showToast = (message: string) => {
-    setToast(message);
-    setTimeout(() => setToast(null), 4000);
-  };
+  React.useEffect(() => {
+    if (executeMutation.isError) {
+      addToast(
+        executeMutation.error instanceof Error
+          ? executeMutation.error.message
+          : "Operation failed",
+        "error"
+      );
+    } else if (executeMutation.isSuccess) {
+      addToast("Operation completed", "success");
+    }
+  }, [executeMutation.isError, executeMutation.isSuccess, executeMutation.error, addToast]);
 
   const handleExecute = async (action: string) => {
     try {
       const result = await executeMutation.mutateAsync({ action, confirm: true });
-      showToast(`${action}: ${result.message}`);
+      addToast(`${action}: ${result.message}`, "success");
     } catch (error) {
-      showToast(error instanceof Error ? error.message : "Operation failed");
+      addToast(error instanceof Error ? error.message : "Operation failed", "error");
     }
   };
 
@@ -90,7 +98,11 @@ export function OverviewPage() {
     return (
       <div className="space-y-4">
         <h1 className="text-2xl font-semibold text-white">Overview</h1>
-        <p className="text-sm text-slate-400">Loading dashboard...</p>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="h-24 animate-pulse rounded-lg bg-white/5" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -99,9 +111,15 @@ export function OverviewPage() {
     return (
       <div className="space-y-4">
         <h1 className="text-2xl font-semibold text-white">Overview</h1>
-        <p className="text-sm text-rose-400">
-          Failed to load dashboard overview. Is the backend reachable?
-        </p>
+        <div className="flex items-center justify-between rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
+          <span>Failed to load dashboard overview. Is the backend reachable?</span>
+          <button
+            onClick={() => refetch()}
+            className="rounded-md bg-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/20"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
@@ -146,11 +164,6 @@ export function OverviewPage() {
 
   return (
     <div className="space-y-6">
-      {toast && (
-        <div className="fixed right-4 top-4 z-50 rounded-lg border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white shadow-xl">
-          {toast}
-        </div>
-      )}
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold text-white">Overview</h1>
         <p className="text-sm text-slate-400">

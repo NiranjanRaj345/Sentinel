@@ -3,6 +3,7 @@
 import React from "react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { useServices } from "@/services/dashboard";
+import { useToastStore } from "@/stores/toast";
 import type { ServiceItem } from "@/types/dashboard";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -14,8 +15,22 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function ServicesRoute() {
   const { servicesQuery, actionMutation } = useServices();
-  const { data, isLoading, isError } = servicesQuery;
+  const { data, isLoading, isError, refetch } = servicesQuery;
   const services = (data?.services ?? []) as ServiceItem[];
+  const addToast = useToastStore((state) => state.addToast);
+
+  React.useEffect(() => {
+    if (actionMutation.isError) {
+      addToast(
+        actionMutation.error instanceof Error
+          ? actionMutation.error.message
+          : "Service action failed",
+        "error"
+      );
+    } else if (actionMutation.isSuccess) {
+      addToast("Service action completed", "success");
+    }
+  }, [actionMutation.isError, actionMutation.isSuccess, actionMutation.error, addToast]);
 
   const runAction = (name: string, action: string) => {
     actionMutation.mutate({ action, name });
@@ -32,14 +47,22 @@ export default function ServicesRoute() {
         </div>
 
         {isLoading && (
-          <div className="rounded-lg border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
-            Loading services...
+          <div className="space-y-3">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="h-16 animate-pulse rounded-lg bg-white/5" />
+            ))}
           </div>
         )}
 
         {isError && (
-          <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
-            Failed to load services.
+          <div className="flex items-center justify-between rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
+            <span>Failed to load services.</span>
+            <button
+              onClick={() => refetch()}
+              className="rounded-md bg-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/20"
+            >
+              Retry
+            </button>
           </div>
         )}
 
@@ -68,19 +91,22 @@ export default function ServicesRoute() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => runAction(svc.name, "start")}
-                    className="rounded-md bg-emerald-500/10 px-2 py-1 text-xs font-medium text-emerald-200 hover:bg-emerald-500/20"
+                    disabled={actionMutation.isPending}
+                    className="rounded-md bg-emerald-500/10 px-2 py-1 text-xs font-medium text-emerald-200 hover:bg-emerald-500/20 disabled:opacity-60"
                   >
                     Start
                   </button>
                   <button
                     onClick={() => runAction(svc.name, "stop")}
-                    className="rounded-md bg-red-500/10 px-2 py-1 text-xs font-medium text-red-200 hover:bg-red-500/20"
+                    disabled={actionMutation.isPending}
+                    className="rounded-md bg-red-500/10 px-2 py-1 text-xs font-medium text-red-200 hover:bg-red-500/20 disabled:opacity-60"
                   >
                     Stop
                   </button>
                   <button
                     onClick={() => runAction(svc.name, "restart")}
-                    className="rounded-md bg-white/10 px-2 py-1 text-xs font-medium text-white hover:bg-white/20"
+                    disabled={actionMutation.isPending}
+                    className="rounded-md bg-white/10 px-2 py-1 text-xs font-medium text-white hover:bg-white/20 disabled:opacity-60"
                   >
                     Restart
                   </button>
