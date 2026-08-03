@@ -36,6 +36,9 @@ import (
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/automation"
 	automationSQLite "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/automation/storage/sqlite"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/guardian"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/observer"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/recovery"
+	recoverySQLite "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/recovery/storage/sqlite"
 )
 
 const ConfigPath = "config.yaml"
@@ -58,6 +61,8 @@ type Application struct {
 	resourcesService  *resources.Service
 	automationService *automation.Service
 	guardianService   *guardian.Service
+	observerService   *observer.Service
+	recoveryService   *recovery.Service
 }
 
 func New() (*Application, error) {
@@ -140,6 +145,17 @@ func New() (*Application, error) {
 	automationEngine := automation.NewEngine(operationsService, guardianService, eventsService.Publish, log.Component("automation"))
 	automationService := automation.NewService(automationEngine, automationRepo, guardianService, log.Component("automation"))
 
+	recoveryRepo, err := recoverySQLite.OpenRecovery(cfg.Storage.Path)
+	if err != nil {
+		return nil, fmt.Errorf("open recovery storage: %w", err)
+	}
+
+	recoveryExecutor := recovery.NewExecutor(guardianService, eventsService.Publish, log.Component("recovery"))
+	recoveryEngine := recovery.NewEngine(recoveryExecutor, recoveryRepo, eventsService.Publish, log.Component("recovery"))
+	recoveryService := recovery.NewService(recoveryEngine, recoveryRepo, eventsService.Publish, log.Component("recovery"))
+
+	observerService := observer.NewService(nil, eventsService.Publish, log.Component("observer"))
+
 	rulesService := rules.NewService(rulesRepo, automationEngine, nil, log.Component("rules"))
 
 	resourcesRepo, err := resourcesSQLite.Open(cfg.Storage.Path)
@@ -184,6 +200,8 @@ func New() (*Application, error) {
 		resourcesService,
 		automationService,
 		guardianService,
+		observerService,
+		recoveryService,
 	)
 
 	return &Application{
@@ -204,6 +222,8 @@ func New() (*Application, error) {
 		resourcesService:  resourcesService,
 		automationService: automationService,
 		guardianService:   guardianService,
+		observerService:   observerService,
+		recoveryService:   recoveryService,
 	}, nil
 }
 
@@ -264,6 +284,10 @@ func (a *Application) Shutdown(ctx context.Context) error {
 
 	if err := a.automationService.Close(); err != nil {
 		a.logger.Error("failed to close automation storage: %v", err)
+	}
+
+	if err := a.recoveryService.Close(); err != nil {
+		a.logger.Error("failed to close recovery storage: %v", err)
 	}
 
 	return a.server.Shutdown(ctx)

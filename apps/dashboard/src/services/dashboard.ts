@@ -16,6 +16,12 @@ import type {
   ServicesResponse,
   GuardianStatus,
   GuardianActionResponse,
+  RecoveryExecution,
+  RecoveryExecutionsResponse,
+  ExecuteRecoveryRequest,
+  ExecuteRecoveryResponse,
+  ObserverStatus,
+  ObserverEnvironment,
 } from "@/types/dashboard";
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8080").replace(/\/$/, "");
@@ -281,5 +287,72 @@ export function useGuardianReset() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["guardian", "status"] });
     },
+  });
+}
+
+async function fetchRecoveryExecutions(): Promise<RecoveryExecutionsResponse> {
+  return fetchJSON("recovery", `${API_BASE}/recovery/recent`);
+}
+
+export function useRecoveryExecutions(staleMs = 30_000) {
+  return useQuery({
+    queryKey: ["recovery", "executions"],
+    queryFn: fetchRecoveryExecutions,
+    staleTime: staleMs,
+  });
+}
+
+async function executeRecovery(policyId: string, target: string): Promise<ExecuteRecoveryResponse> {
+  const response = await fetch(`${API_BASE}/recovery/execute`, {
+    method: "POST",
+    cache: "no-store",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ policyId, target }),
+  });
+
+  if (!response.ok) {
+    await handleResponseError("recovery execute", response);
+  }
+
+  return response.json() as Promise<ExecuteRecoveryResponse>;
+}
+
+export function useExecuteRecovery() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ policyId, target }: { policyId: string; target: string }) =>
+      executeRecovery(policyId, target),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["recovery", "executions"] });
+    },
+  });
+}
+
+async function fetchObserverStatus(): Promise<ObserverStatus> {
+  return fetchJSON("observer status", `${API_BASE}/observer/status`);
+}
+
+export function useObserverStatus(refreshMs = 5000) {
+  return useQuery({
+    queryKey: ["observer", "status"],
+    queryFn: fetchObserverStatus,
+    refetchInterval: refreshMs,
+    refetchIntervalInBackground: false,
+    staleTime: 0,
+  });
+}
+
+async function fetchObserverEnvironment(): Promise<ObserverEnvironment> {
+  return fetchJSON("observer environment", `${API_BASE}/observer/environment`);
+}
+
+export function useObserverEnvironment(refreshMs = 5000) {
+  return useQuery({
+    queryKey: ["observer", "environment"],
+    queryFn: fetchObserverEnvironment,
+    refetchInterval: refreshMs,
+    refetchIntervalInBackground: false,
+    staleTime: 0,
   });
 }

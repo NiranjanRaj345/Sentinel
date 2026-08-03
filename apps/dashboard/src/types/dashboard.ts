@@ -172,6 +172,28 @@ export type AutomationExecutionsResponse = {
   executions: AutomationExecution[];
 };
 
+export type RecoveryExecution = {
+  id: string;
+  policyId: string;
+  status: "running" | "succeeded" | "failed";
+  current: number;
+  attempts: number;
+  message: string;
+  startedAt: string;
+  finishedAt?: string;
+};
+
+export type RecoveryExecutionsResponse = {
+  executions: RecoveryExecution[];
+};
+
+export type ExecuteRecoveryRequest = {
+  policyId: string;
+  target: string;
+};
+
+export type ExecuteRecoveryResponse = RecoveryExecution;
+
 export type GuardianStatus = {
   status: "online" | "offline";
   firmware: string;
@@ -184,4 +206,16 @@ export type GuardianStatus = {
 
 export type GuardianActionResponse = {
   result: string;
+};
+
+export type ObserverStatus = {
+  status: "online" | "offline";
+  firmware: string;
+  uptime: number;
+  lastSeen: string;
+};
+
+export type ObserverEnvironment = {
+  temperature: number;
+  humidity: number;
 };

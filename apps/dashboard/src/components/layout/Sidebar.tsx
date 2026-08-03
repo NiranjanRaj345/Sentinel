@@ -17,6 +17,8 @@ import {
   Cpu,
   Play,
   Shield,
+  RotateCcw,
+  Thermometer,
 } from "lucide-react";
 import { useUIStore } from "@/stores/ui";
 
@@ -30,6 +32,8 @@ const navigation = [
   { name: "Services", href: "/services", icon: Wrench },
   { name: "Resources", href: "/resources", icon: Cpu },
   { name: "Guardian", href: "/guardian", icon: Shield },
+  { name: "Observer", href: "/observer", icon: Thermometer },
+  { name: "Recovery", href: "/recovery", icon: RotateCcw },
   { name: "Automation", href: "/automation", icon: Play },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
