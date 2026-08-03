@@ -6,6 +6,29 @@ Sentinel is a self-hosted personal infrastructure platform designed to monitor, 
 
 ---
 
+## Architecture
+
+```text
+                Internet
+                    │
+            Fedora Laptop
+                    │
+               Tailscale VPN
+                    │
+              Home Router
+                    │
+      ┌─────────────┼─────────────┐
+      │             │             │
+      ▼             ▼             ▼
+Desktop Agent   Guardian ESP32  Observer ESP32
+      │             │             │
+      └─────────────┼─────────────┘
+                    │
+             Mission Dashboard
+```
+
+---
+
 ## Vision
 
 Sentinel begins with a single Windows desktop and evolves into a unified platform capable of managing:
@@ -30,12 +53,16 @@ Responsible for:
 - System information
 - Health reporting
 - Software actions
+- Event publishing
+- Rule evaluation
+- Automation execution
+- Recovery orchestration
 
 ---
 
 ### Guardian
 
-Hardware controller.
+Hardware recovery controller.
 
 Responsible for:
 
@@ -45,15 +72,15 @@ Responsible for:
 
 ---
 
-### Gateway
+### Observer
 
-Coordinates communication between devices.
+Environmental monitoring subsystem.
 
 Responsible for:
 
-- Device routing
-- State aggregation
-- Secure communication
+- Temperature sensing
+- Humidity sensing
+- Local status display
 
 ---
 
@@ -65,11 +92,24 @@ The primary interface used to monitor and control the infrastructure.
 
 ## Project Status
 
-🚧 Under active development.
+### ✅ Completed
 
-Current milestone:
+- Remote Access Foundation
+- Sentinel Node Agent
+- Mission Dashboard
+- Authentication
+- Events Framework
+- Rules Engine
+- Automation Engine
+- Recovery Engine
+- Guardian Integration
+- Observer Integration
 
-- Repository foundation
+### 🚧 In Progress
+
+- Notification Providers
+- Multi-node Support
+- Mission Control
 
 ---
 

@@ -9,36 +9,59 @@
 - System API
 - Dependency Injection
 
----
+## Phase 2 — Observability ✅
 
-## Phase 2 — Observation
+- CPU, Memory, Disk, Network Metrics
+- History API
+- WebSocket streaming
+- Dashboard overview and monitoring pages
 
-- CPU Metrics
-- Memory Metrics
-- Disk Metrics
-- Network Metrics
+## Phase 3 — Control ✅
 
----
+- Remote operations
+- Service management
+- Resource health
+- Process and service providers
 
-## Phase 3 — Control
-
-- Remote Actions
-- Process Management
-- Windows Services
-
----
-
-## Phase 4 — Infrastructure
-
-- Gateway
-- Guardian
-- Dashboard
-
----
-
-## Phase 5 — Platform
+## Phase 4 — Platform Intelligence ✅
 
 - Authentication
-- WebSockets
-- Automation
-- Mobile Support
+- Events framework
+- Rules engine
+- Automation engine
+- Alert evaluation
+
+## Phase 5 — Remote Management ✅
+
+- Guardian integration
+- Recovery engine
+- Hardware recovery orchestration
+- Policy-driven recovery with retries
+
+## Phase 6 — Environmental Awareness ✅
+
+- Observer integration
+- Environmental API
+- Observer dashboard
+
+## Phase 7 — Notifications 🚧
+
+- Notification provider interface
+- Telegram provider
+- Discord provider
+- Email provider
+- Recovery-aware notifications
+
+## Phase 8 — Multi-node Foundation ⏳
+
+- Node registry
+- Cross-node metrics aggregation
+- Fleet dashboard
+- Centralized event view
+
+## Phase 9 — Mission Control ⏳
+
+- Fleet recovery orchestration
+- Cross-node automation
+- Distributed rule evaluation
+- Mission Control dashboard

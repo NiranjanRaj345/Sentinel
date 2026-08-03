@@ -10,17 +10,48 @@ The format is inspired by Keep a Changelog.
 
 ### Added
 
-- Nothing yet.
+- Recovery engine with policy-driven orchestration
+- Guardian hardware integration with REST API
+- Observer environmental monitoring integration
+- Recovery execution persistence via SQLite
+- Guardian and Observer dashboard pages
+- Recovery automation actions in rule engine
+- Guardian events integrated into event system
+- Observer firmware scaffold with PlatformIO
 
 ### Changed
 
-- Nothing yet.
+- Updated specification with current architecture
+- Updated roadmap to reflect completed phases
+- Updated backlog with completed items
+- README milestone status sections
 
 ### Fixed
 
-- Nothing yet.
+- Backend JSON field name alignment with frontend types
+- API error handling with detailed status and body messages
 
 ---
+
+## v0.3.0-dev — Platform Alpha
+
+### Added
+
+- Complete monitoring subsystem
+- Event-driven architecture
+- Rules engine with condition/action model
+- Automation engine
+- Recovery engine with retry and delay support
+- Guardian integration (power/reset/status)
+- Observer integration (temperature/humidity/status)
+- Dashboard pages for all subsystems
+- SQLite persistence for events, rules, automation, recovery
+- WebSocket streaming
+- Authentication middleware
+- Next.js dashboard with React Query
+
+---
+
 ## v0.2.0 — Core Foundation
 
 ### Added
@@ -40,6 +71,8 @@ The format is inspired by Keep a Changelog.
 
 ### Removed
 - Legacy internal/server/handlers.go
+
+---
 
 ## [0.8.0]
 
