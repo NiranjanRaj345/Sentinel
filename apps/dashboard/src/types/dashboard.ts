@@ -237,3 +237,21 @@ export type ObserverEnvironment = {
   temperature: number;
   humidity: number;
 };
+
+export type NodeStatus = "online" | "offline" | "unknown";
+
+export type Node = {
+  id: string;
+  name: string;
+  hostname: string;
+  address: string;
+  version: string;
+  platform: string;
+  status: NodeStatus;
+  lastSeen: string;
+  createdAt: string;
+};
+
+export type NodesResponse = {
+  nodes: Node[];
+};

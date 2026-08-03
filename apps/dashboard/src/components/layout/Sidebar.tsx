@@ -20,11 +20,13 @@ import {
   Shield,
   RotateCcw,
   Thermometer,
+  Server,
 } from "lucide-react";
 import { useUIStore } from "@/stores/ui";
 
 const navigation = [
   { name: "Overview", href: "/", icon: LayoutDashboard },
+  { name: "Nodes", href: "/nodes", icon: Server },
   { name: "Monitoring", href: "/monitoring", icon: Activity },
   { name: "History", href: "/history", icon: History },
   { name: "Activity", href: "/activity", icon: ListTree },

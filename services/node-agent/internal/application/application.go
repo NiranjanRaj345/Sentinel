@@ -42,6 +42,8 @@ import (
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/notification"
 	notificationSQLite "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/notification/storage/sqlite"
 	telegramprovider "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/notification/providers/telegram"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/nodes"
+	nodesSQLite "github.com/NiranjanRaj345/sentinel/services/node-agent/internal/nodes/storage/sqlite"
 )
 
 const ConfigPath = "config.yaml"
@@ -57,6 +59,7 @@ type Application struct {
 	dashboard          *dashboard.Service
 	dashboardHub       *dashboard.Hub
 	nodeService        *node.Service
+	nodesService       *nodes.Service
 	operationsService  *operations.Service
 	eventsService      *events.Service
 	rulesService       *rules.Service
@@ -67,6 +70,8 @@ type Application struct {
 	observerService    *observer.Service
 	recoveryService    *recovery.Service
 	notificationsService *notification.Service
+	offlineCtx         context.Context
+	offlineCancel      context.CancelFunc
 }
 
 func New() (*Application, error) {
@@ -142,6 +147,13 @@ func NewWithConfig(path string) (*Application, error) {
 	servicesService := services.NewService(newServiceProvider(log.Component("services")), servicesRepo, log.Component("services"))
 
 	eventsService := events.NewService(eventRepo, nil, log.Component("events"))
+
+	nodesRepo, err := nodesSQLite.OpenNodes(cfg.Storage.Path)
+	if err != nil {
+		return nil, fmt.Errorf("open nodes storage: %w", err)
+	}
+
+	nodesService := nodes.NewService(nodesRepo, eventsService.Publish, log.Component("nodes"))
 
 	notificationsRepo, err := notificationSQLite.OpenNotifications(cfg.Storage.Path)
 	if err != nil {
@@ -233,6 +245,7 @@ func NewWithConfig(path string) (*Application, error) {
 		dashboardService,
 		dashboardHub,
 		nodeService,
+		nodesService,
 		operationsService,
 		authStore,
 		eventsService,
@@ -257,6 +270,7 @@ func NewWithConfig(path string) (*Application, error) {
 		dashboard:          dashboardService,
 		dashboardHub:       dashboardHub,
 		nodeService:        nodeService,
+		nodesService:       nodesService,
 		operationsService:  operationsService,
 		eventsService:      eventsService,
 		rulesService:       rulesService,
@@ -296,7 +310,29 @@ func (a *Application) Start() error {
 		return fmt.Errorf("start metrics scheduler: %w", err)
 	}
 
+	timeout, err := time.ParseDuration(a.cfg.Nodes.HeartbeatTimeout)
+	if err != nil {
+		return fmt.Errorf("parse nodes heartbeat timeout: %w", err)
+	}
+
+	a.offlineCtx, a.offlineCancel = context.WithCancel(context.Background())
+	go a.runOfflineChecker(a.offlineCtx, timeout)
+
 	return a.server.Start()
+}
+
+func (a *Application) runOfflineChecker(ctx context.Context, timeout time.Duration) {
+	ticker := time.NewTicker(timeout / 2)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			a.nodesService.CheckOfflineNodes(ctx, timeout)
+		}
+	}
 }
 
 func (a *Application) Shutdown(ctx context.Context) error {
@@ -304,6 +340,10 @@ func (a *Application) Shutdown(ctx context.Context) error {
 	a.scheduler.Stop()
 	a.hub.Stop()
 	a.dashboardHub.Stop()
+
+	if a.offlineCancel != nil {
+		a.offlineCancel()
+	}
 
 	if err := a.store.Close(); err != nil {
 		a.logger.Error("failed to close storage: %v", err)
@@ -335,6 +375,10 @@ func (a *Application) Shutdown(ctx context.Context) error {
 
 	if err := a.notificationsService.Close(); err != nil {
 		a.logger.Error("failed to close notifications storage: %v", err)
+	}
+
+	if err := a.nodesService.Close(); err != nil {
+		a.logger.Error("failed to close nodes storage: %v", err)
 	}
 
 	return a.server.Shutdown(ctx)

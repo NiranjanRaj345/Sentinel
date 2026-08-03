@@ -17,6 +17,7 @@ import (
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/observer"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/recovery"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/notification"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/nodes"
 )
 
 func (s *Server) registerRoutes(mux *http.ServeMux) {
@@ -49,6 +50,9 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.Handle("/recovery/recent", s.authRead(recovery.NewHandler(s.recoveryService, s.log)))
 	mux.Handle("/notifications/recent", s.authRead(notification.NewHandler(s.notificationsService, s.log)))
 	mux.Handle("/notifications/test", s.authOperate(notification.NewTestHandler(s.notificationsService, s.log)))
+	mux.Handle("/nodes/register", s.authOperate(nodes.NewHandler(s.nodesService, s.log)))
+	mux.Handle("/nodes/heartbeat", s.authOperate(nodes.NewHandler(s.nodesService, s.log)))
+	mux.Handle("/nodes", s.authRead(nodes.NewHandler(s.nodesService, s.log)))
 }
 
 func (s *Server) authRead(next http.Handler) http.Handler {

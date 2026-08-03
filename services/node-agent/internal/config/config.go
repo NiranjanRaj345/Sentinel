@@ -19,6 +19,7 @@ type Config struct {
 	Alerts       AlertsConfig       `yaml:"alerts"`
 	Auth         AuthConfig         `yaml:"auth"`
 	Notifications NotificationsConfig `yaml:"notifications"`
+	Nodes        NodesConfig        `yaml:"nodes"`
 }
 
 type AuthConfig struct {
@@ -28,6 +29,10 @@ type AuthConfig struct {
 type NotificationsConfig struct {
 	Enabled   bool                       `yaml:"enabled"`
 	Providers map[string]ProviderConfig `yaml:"providers"`
+}
+
+type NodesConfig struct {
+	HeartbeatTimeout string `yaml:"heartbeat_timeout"`
 }
 
 type ProviderConfig struct {
@@ -151,6 +156,9 @@ func Default() Config {
 			Enabled:   true,
 			Providers: map[string]ProviderConfig{},
 		},
+		Nodes: NodesConfig{
+			HeartbeatTimeout: "2m",
+		},
 	}
 }
 
@@ -188,6 +196,10 @@ func (c Config) Validate() error {
 	}
 
 	if err := c.Notifications.Validate(); err != nil {
+		return err
+	}
+
+	if err := c.Nodes.Validate(); err != nil {
 		return err
 	}
 
@@ -268,6 +280,18 @@ func (c AuthConfig) Validate() error {
 			}
 		}
 	}
+	return nil
+}
+
+func (c NodesConfig) Validate() error {
+	if c.HeartbeatTimeout == "" {
+		return fmt.Errorf("nodes.heartbeat_timeout cannot be empty")
+	}
+
+	if _, err := time.ParseDuration(c.HeartbeatTimeout); err != nil {
+		return fmt.Errorf("nodes.heartbeat_timeout must be a valid duration: %w", err)
+	}
+
 	return nil
 }
 

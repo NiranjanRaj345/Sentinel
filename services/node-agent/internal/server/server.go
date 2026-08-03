@@ -23,6 +23,7 @@ import (
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/observer"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/recovery"
 	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/notification"
+	"github.com/NiranjanRaj345/sentinel/services/node-agent/internal/nodes"
 )
 
 type Server struct {
@@ -35,6 +36,7 @@ type Server struct {
 	dashboard            *dashboard.Service
 	dashboardHub         *dashboard.Hub
 	nodeService          *node.Service
+	nodesService         *nodes.Service
 	operationsService    *operations.Service
 	authStore            *auth.TokenStore
 	eventsService        *events.Service
@@ -59,6 +61,7 @@ func New(
 	dashboard *dashboard.Service,
 	dashboardHub *dashboard.Hub,
 	nodeService *node.Service,
+	nodesService *nodes.Service,
 	operationsService *operations.Service,
 	authStore *auth.TokenStore,
 	eventsService *events.Service,
@@ -81,6 +84,7 @@ func New(
 		dashboard:            dashboard,
 		dashboardHub:         dashboardHub,
 		nodeService:          nodeService,
+		nodesService:         nodesService,
 		operationsService:    operationsService,
 		authStore:            authStore,
 		eventsService:        eventsService,

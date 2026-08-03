@@ -24,6 +24,8 @@ import type {
   ObserverEnvironment,
   Notification,
   NotificationsResponse,
+  Node,
+  NodesResponse,
 } from "@/types/dashboard";
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8080").replace(/\/$/, "");
@@ -375,5 +377,30 @@ export function useNotifications(staleMs = 30_000) {
     queryKey: ["notifications"],
     queryFn: fetchNotifications,
     staleTime: staleMs,
+  });
+}
+
+async function fetchNodes(): Promise<NodesResponse> {
+  return fetchJSON("nodes", `${API_BASE}/nodes`);
+}
+
+export function useNodes() {
+  return useQuery({
+    queryKey: ["nodes"],
+    queryFn: fetchNodes,
+    staleTime: 10_000,
+  });
+}
+
+async function fetchNodeDetail(id: string): Promise<Node> {
+  return fetchJSON(`node ${id}`, `${API_BASE}/nodes/${encodeURIComponent(id)}`);
+}
+
+export function useNodeDetail(id: string) {
+  return useQuery({
+    queryKey: ["nodes", id],
+    queryFn: () => fetchNodeDetail(id),
+    enabled: Boolean(id),
+    staleTime: 10_000,
   });
 }
